@@ -183,6 +183,17 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
         })}
       </div>
 
+      {/* Modern Separator */}
+      <div style={{ padding: '8px 16px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)' }} />
+          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', whiteSpace: 'nowrap' }}>
+            المنشورات الأخيرة
+          </span>
+          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)' }} />
+        </div>
+      </div>
+
       {/* Posts Grid (3 Columns of Instagram Cards) */}
       <div style={{ padding: '0 8px 32px' }}>
         <div style={{ 
