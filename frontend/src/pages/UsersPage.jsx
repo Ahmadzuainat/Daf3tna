@@ -10,7 +10,11 @@ const UsersPage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [showOnlyOnline, setShowOnlyOnline] = useState(false);
-  const { user: authUser } = useAuthStore();
+   const { user: authUser } = useAuthStore();
+ 
+   useEffect(() => {
+     console.log('👤 Current Admin User:', authUser);
+   }, [authUser]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -133,7 +137,7 @@ const UsersPage = () => {
                       {u.status === 'active' ? <UserX size={20} /> : <UserCheck size={20} />}
                     </button>
 
-                    {authUser.role === 'superadmin' && (
+                    {authUser?.role?.toLowerCase() === 'superadmin' && (
                       <button 
                         onClick={async () => {
                           if (!window.confirm(`هل أنت متأكد من حذف حساب ${u.fullName} نهائياً من قاعدة البيانات؟ لا يمكن التراجع عن هذا الإجراء!`)) return;
@@ -142,6 +146,7 @@ const UsersPage = () => {
                             toast.success('تم حذف المستخدم نهائياً');
                             fetchUsers();
                           } catch (err) {
+                            console.error('Delete error:', err);
                             toast.error('فشل الحذف');
                           }
                         }}
