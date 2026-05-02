@@ -30,7 +30,7 @@ import { GlobalHeader, NotificationDrawer } from '../components/common/LayoutCom
 // Services
 import api from '../services/api';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';
 
 const HomePage = () => {
   const navigate = useNavigate();

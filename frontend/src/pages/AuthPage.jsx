@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Shield, Search, ArrowLeft, GraduationCap, Mail, Lock, User as UserIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API_BASE_URL = 'http://localhost:5003';
+const API_BASE_URL = 'https://daf3tna.onrender.com';
 
 const AuthPage = () => {
   const [step, setStep] = useState(1); // 1: Login/Register, 2: Select Batch
