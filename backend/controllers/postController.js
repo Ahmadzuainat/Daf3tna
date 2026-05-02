@@ -116,13 +116,9 @@ export const getPostDetails = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.id).populate('user', 'fullName username avatarUrl isPrivate followers');
   if (!post) return res.status(404).json({ message: 'المنشور غير موجود' });
 
-  // Privacy Check (Exempt Admins/Superadmins/Moderators)
-  const isAdmin = ['admin', 'superadmin', 'moderator'].includes(req.user.role);
-  
-  if (!post.user) {
-    // If post user is missing, only admins can see details or we just allow it as a "ghost" post
-    if (!isAdmin) return res.status(404).json({ message: 'صاحب المنشور غير موجود' });
-  } else if (!isAdmin && post.user.isPrivate && 
+  // Privacy Check (Exempt Admins/Superadmins)
+  const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+  if (!isAdmin && post.user.isPrivate && 
       post.user._id.toString() !== req.user._id.toString() && 
       !post.user.followers.some(f => f.toString() === req.user._id.toString())) {
     return res.status(403).json({ message: 'هذا الحساب خاص' });

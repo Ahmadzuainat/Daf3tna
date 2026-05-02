@@ -57,14 +57,13 @@ router.put('/:id', protect, async (req, res) => {
 router.delete('/:id', protect, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    const isAdmin = ['admin', 'superadmin', 'moderator'].includes(req.user.role);
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
     
     if (!post) {
       return res.status(404).json({ message: 'المنشور غير موجود' });
     }
 
-    const postUserId = post.user ? post.user.toString() : null;
-    if (postUserId !== req.user._id.toString() && !isAdmin) {
+    if (post.user.toString() !== req.user._id.toString() && !isAdmin) {
       return res.status(403).json({ message: 'غير مسموح' });
     }
 
