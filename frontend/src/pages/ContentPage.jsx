@@ -24,15 +24,19 @@ const ContentPage = () => {
       const endpoint = activeTab === 'posts' 
         ? `/admin/content/posts?page=${p}&limit=12` 
         : '/admin/content/stories';
-      const { data } = await api.get(endpoint);
+      
+      console.log(`📡 ContentPage: Fetching ${activeTab} from ${endpoint}`);
+      const res = await api.get(endpoint);
+      const data = res.data;
       
       if (activeTab === 'posts') {
-        setItems(data.data);
-        setTotalPages(data.pages);
+        setItems(data.data || []);
+        setTotalPages(data.pages || 1);
       } else {
-        setItems(data.data);
+        setItems(data.data || []);
       }
     } catch (err) {
+      console.error('❌ ContentPage Fetch Error:', err.response?.data || err.message);
       toast.error('فشل في جلب المحتوى');
     } finally {
       setLoading(false);
@@ -48,8 +52,8 @@ const ContentPage = () => {
     if (!window.confirm('هل أنت متأكد من حذف هذا المحتوى نهائياً؟')) return;
     try {
       const endpoint = activeTab === 'posts' 
-        ? `/admin/content/posts/${id}` 
-        : `/admin/content/stories/${id}`;
+        ? `admin/content/posts/${id}` 
+        : `admin/content/stories/${id}`;
       await api.delete(endpoint);
       toast.success('تم حذف المحتوى');
       fetchData(page);

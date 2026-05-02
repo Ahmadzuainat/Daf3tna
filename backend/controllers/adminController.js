@@ -206,6 +206,7 @@ export const getAdminLogs = asyncHandler(async (req, res) => {
 });
 // --- CONTENT MANAGEMENT ---
 export const getAdminPosts = asyncHandler(async (req, res) => {
+  console.log('📡 Admin: Fetching all posts...');
   const { page = 1, limit = 10, search = '' } = req.query;
   const query = search ? { text: { $regex: search, $options: 'i' } } : {};
   
