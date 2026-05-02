@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../store/useAppStore';
 import { toast } from 'sonner';
 
-export const GlobalHeader = ({ user, onProfileClick, onMessagesClick, onNotificationsClick, unreadCount }) => {
+export const GlobalHeader = ({ user, onProfileClick, onMessagesClick, onNotificationsClick, unreadCount, messageCount }) => {
   return (
     <header style={{ 
       background: 'var(--nav-bg)', 
@@ -36,6 +36,7 @@ export const GlobalHeader = ({ user, onProfileClick, onMessagesClick, onNotifica
           </div>
           <div style={{ position: 'relative', cursor: 'pointer', padding: '8px' }} onClick={onMessagesClick}>
             <Send size={22} color="var(--text-primary)" />
+            {messageCount > 0 && <span className="badge-counter" style={{ background: '#ef4444' }}>{messageCount}</span>}
           </div>
           <img onClick={onProfileClick} src={user?.avatarUrl || "https://ui-avatars.com/api/?name=Guest&background=111&color=fff"} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid var(--glass-border)', objectFit: 'cover', cursor: 'pointer' }} />
         </div>

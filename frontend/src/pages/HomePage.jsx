@@ -183,6 +183,7 @@ const HomePage = () => {
   const refreshUI = () => setRefreshKey(prev => prev + 1);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const messageCount = useAppStore.getState().chats.reduce((acc, c) => acc + (c.unreadCount?.[user?._id] || 0), 0);
 
   const isFullScreen = ['hub_preview', 'hub_server', 'inbox', 'dm_chat', 'vibes', 'notifications', 'settings'].includes(activeTab);
 
@@ -196,6 +197,7 @@ const HomePage = () => {
           onMessagesClick={() => setActiveTab('inbox')} 
           onNotificationsClick={() => setShowNotifDrawer(true)}
           unreadCount={unreadCount}
+          messageCount={messageCount}
         />
       )}
 

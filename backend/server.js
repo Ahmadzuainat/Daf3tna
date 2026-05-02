@@ -130,10 +130,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('dm:newMessage', (message) => {
-    // Emit to the conversation room
-    socket.to(message.conversationId).emit('dm:messageReceived', message);
+    // Emit to the conversation room (chatId)
+    if (message.chatId) {
+      socket.to(message.chatId).emit('dm:messageReceived', message);
+    }
     // Also emit a notification to the specific receiver's personal room
-    socket.to(message.receiver).emit('dm:newNotification', message);
+    if (message.receiver) {
+      socket.to(message.receiver).emit('dm:newNotification', message);
+    }
   });
 
   // GLOBAL EMERGENCY ALERT (Superadmin only)
