@@ -14,6 +14,7 @@ import SiteControlPage from './pages/SiteControlPage';
 import ContentPage from './pages/ContentPage';
 import LogsPage from './pages/LogsPage';
 import AdminHubsPage from './pages/AdminHubsPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 // Layouts & Guards
 import AdminLayout from './components/AdminLayout';
@@ -69,10 +70,22 @@ function App() {
 
   if (maintenance) {
     return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0a0f1c', color: 'white', textAlign: 'center', padding: '20px' }}>
-        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🛠️</div>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '10px' }}>{maintenance.maintenanceMessage}</h1>
-        <p style={{ color: '#94a3b8' }}>نحن نجري بعض التحسينات، سنعود قريباً جداً.</p>
+      <div style={{ 
+        height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+        background: 'var(--bg-dark)', color: 'white', textAlign: 'center', padding: '24px', position: 'relative', overflow: 'hidden' 
+      }}>
+        <div style={{ 
+          position: 'absolute', width: '300px', height: '300px', 
+          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+          filter: 'blur(80px)', zIndex: 0 
+        }} />
+        <div className="auth-glass" style={{ maxWidth: '500px', zIndex: 1 }}>
+          <div className="auth-inner">
+            <div style={{ fontSize: '4rem', marginBottom: '24px' }}>🛠️</div>
+            <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '16px' }}>{maintenance.maintenanceMessage}</h1>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>نحن نجري بعض التحسينات التقنية لضمان أفضل تجربة لدفعتنا، سنعود قريباً جداً.</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -99,7 +112,7 @@ function App() {
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );
