@@ -101,14 +101,8 @@ router.post('/quotes', protect, async (req, res) => {
 
 router.delete('/quotes/:id', protect, async (req, res) => {
   try {
-    const quote = await Quote.findById(req.params.id);
-    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-    if (!quote) return res.status(404).json({ message: 'الاقتباس غير موجود' });
-    
-    if (quote.addedBy.toString() !== req.user._id.toString() && !isAdmin) {
-      return res.status(403).json({ message: 'غير مسموح' });
-    }
-    
+    const quote = await Quote.findOne({ _id: req.params.id, addedBy: req.user._id });
+    if (!quote) return res.status(404).json({ message: 'الاقتباس غير موجود أو غير مصرح لك بحذفه' });
     await Quote.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف الاقتباس' });
   } catch (error) {
@@ -153,14 +147,8 @@ router.post('/confessions', protect, async (req, res) => {
 
 router.delete('/confessions/:id', protect, async (req, res) => {
   try {
-    const confession = await Confession.findById(req.params.id);
-    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-    if (!confession) return res.status(404).json({ message: 'الاعتراف غير موجود' });
-
-    if (confession.author.toString() !== req.user._id.toString() && !isAdmin) {
-      return res.status(403).json({ message: 'غير مسموح' });
-    }
-    
+    const confession = await Confession.findOne({ _id: req.params.id, author: req.user._id });
+    if (!confession) return res.status(404).json({ message: 'الاعتراف غير موجود أو غير مصرح لك بحذفه' });
     await Confession.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف الاعتراف' });
   } catch (error) {
@@ -210,14 +198,8 @@ router.post('/panics', protect, async (req, res) => {
 
 router.delete('/panics/:id', protect, async (req, res) => {
   try {
-    const panic = await Panic.findById(req.params.id);
-    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-    if (!panic) return res.status(404).json({ message: 'الفزعة غير موجودة' });
-
-    if (panic.author.toString() !== req.user._id.toString() && !isAdmin) {
-      return res.status(403).json({ message: 'غير مسموح' });
-    }
-
+    const panic = await Panic.findOne({ _id: req.params.id, author: req.user._id });
+    if (!panic) return res.status(404).json({ message: 'الفزعة غير موجودة أو غير مصرح لك بحذفها' });
     await Panic.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف الفزعة' });
   } catch (error) {
@@ -462,17 +444,8 @@ router.post('/instants/:id/like', protect, async (req, res) => {
 // Delete an instant
 router.delete('/instants/:id', protect, async (req, res) => {
   try {
-    const instant = await Instant.findById(req.params.id);
-    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-
-    if (!instant) {
-      return res.status(404).json({ message: 'اللقطة غير موجودة' });
-    }
-
-    if (instant.user.toString() !== req.user._id.toString() && !isAdmin) {
-      return res.status(403).json({ message: 'غير مسموح بحذف هذه اللقطة' });
-    }
-
+    const instant = await Instant.findOne({ _id: req.params.id, user: req.user._id });
+    if (!instant) return res.status(404).json({ message: 'اللقطة غير موجودة أو غير مصرح لك بحذفها' });
     await Instant.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف اللقطة بنجاح' });
   } catch (error) {
