@@ -29,8 +29,8 @@ const CreatePostModal = ({ isOpen, onClose, onPostCreated }) => {
       if (image) {
         const formData = new FormData();
         formData.append('image', image);
-        const uploadRes = await api.post('/upload/image', formData);
-        mediaUrl = uploadRes.data.url;
+        const uploadRes = await api.post('/upload', formData);
+        mediaUrl = uploadRes.data.imageUrl;
       }
 
       await addPost(text, mediaUrl);

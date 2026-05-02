@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const getBaseURL = () => {
   const url = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';
-  return url.endsWith('/api') ? url : `${url}/api`;
+  return url.endsWith('/api/') ? url : (url.endsWith('/api') ? `${url}/` : `${url}/api/`);
 };
 
 const api = axios.create({
