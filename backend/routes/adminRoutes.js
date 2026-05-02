@@ -12,7 +12,11 @@ import {
   getAdminLogs,
   getOnlineUsers,
   broadcastAlert,
-  logoutEveryone
+  logoutEveryone,
+  getAdminPosts,
+  deleteAdminPost,
+  getAdminStories,
+  deleteAdminStory
 } from '../controllers/adminController.js';
 import { protect, moderatorOnly, adminOnly, superAdminOnly } from '../middleware/authMiddleware.js';
 
@@ -32,7 +36,13 @@ router.get('/users/online', adminOnly, getOnlineUsers); // TASK 6
 router.put('/users/:userId/moderate', adminOnly, moderateUser);
 router.get('/settings', adminOnly, getSiteSettings);
 router.put('/settings', adminOnly, updateSiteSettings);
-router.post('/broadcast-alert', adminOnly, broadcastAlert); // TASK 5
+router.post('/broadcast-alert', adminOnly, broadcastAlert);
+
+// Content Management (Moderator+)
+router.get('/content/posts', moderatorOnly, getAdminPosts);
+router.delete('/content/posts/:id', moderatorOnly, deleteAdminPost);
+router.get('/content/stories', moderatorOnly, getAdminStories);
+router.delete('/content/stories/:id', moderatorOnly, deleteAdminStory);
 
 // SuperAdmin Only
 router.post('/security/ban-ip', superAdminOnly, banIP);

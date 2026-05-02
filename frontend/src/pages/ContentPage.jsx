@@ -7,15 +7,31 @@ const ContentPage = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchData = async () => {
+  const getImageUrl = (url) => {
+    if (!url || url.includes('localhost') || url.includes('127.0.0.1')) return "https://via.placeholder.com/150";
+    if (url.startsWith('http')) return url;
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';
+    const cleanBase = baseUrl.endsWith('/api') ? baseUrl.replace('/api', '') : baseUrl;
+    return `${cleanBase}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const fetchData = async (p = 1) => {
     setLoading(true);
     try {
-      // Reusing general admin search or specific routes
-      const endpoint = activeTab === 'posts' ? '/api/posts' : '/api/stories';
+      const endpoint = activeTab === 'posts' 
+        ? `/admin/content/posts?page=${p}&limit=12` 
+        : '/admin/content/stories';
       const { data } = await api.get(endpoint);
-      // Note: In a real app, we'd have a specific /admin/content route for better control
-      setItems(data);
+      
+      if (activeTab === 'posts') {
+        setItems(data.data);
+        setTotalPages(data.pages);
+      } else {
+        setItems(data.data);
+      }
     } catch (err) {
       toast.error('فشل في جلب المحتوى');
     } finally {
@@ -24,15 +40,19 @@ const ContentPage = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    setPage(1);
+    fetchData(1);
   }, [activeTab]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('هل أنت متأكد من حذف هذا المحتوى نهائياً؟')) return;
     try {
-      await api.delete(`${activeTab === 'posts' ? '/api/posts' : '/api/stories'}/${id}`);
+      const endpoint = activeTab === 'posts' 
+        ? `/admin/content/posts/${id}` 
+        : `/admin/content/stories/${id}`;
+      await api.delete(endpoint);
       toast.success('تم حذف المحتوى');
-      fetchData();
+      fetchData(page);
     } catch (err) {
       toast.error('خطأ في الحذف');
     }
@@ -67,11 +87,14 @@ const ContentPage = () => {
           {items.map((item) => (
             <div key={item._id} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', overflow: 'hidden', border: '1px solid #333' }}>
               {item.mediaUrls?.[0] && (
-                <img src={item.mediaUrls[0]} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
+                <img src={getImageUrl(item.mediaUrls[0])} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
+              )}
+              {item.mediaUrl && ( // For stories
+                <img src={getImageUrl(item.mediaUrl)} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
               )}
               <div style={{ padding: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                   <img src={item.user?.avatarUrl || `https://ui-avatars.com/api/?name=${item.user?.fullName}`} style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                   <img src={getImageUrl(item.user?.avatarUrl)} style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{item.user?.fullName}</span>
                 </div>
                 <p style={{ color: 'white', fontSize: '0.9rem', marginBottom: '16px', height: '40px', overflow: 'hidden' }}>{item.text || 'محتوى مرئي'}</p>
@@ -92,6 +115,24 @@ const ContentPage = () => {
         </div>
         {items.length === 0 && <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>لا يوجد محتوى لعرضه حالياً.</div>}
       </div>
+
+      {activeTab === 'posts' && totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '32px' }}>
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setPage(i + 1); fetchData(i + 1); }}
+              style={{
+                width: '40px', height: '40px', borderRadius: '10px', border: 'none',
+                background: page === i + 1 ? '#3b82f6' : 'rgba(255,255,255,0.05)',
+                color: 'white', fontWeight: 'bold', cursor: 'pointer'
+              }}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

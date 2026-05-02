@@ -204,3 +204,61 @@ export const getAdminLogs = asyncHandler(async (req, res) => {
     .limit(100);
   res.json({ success: true, data: logs });
 });
+// --- CONTENT MANAGEMENT ---
+export const getAdminPosts = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, search = '' } = req.query;
+  const query = search ? { text: { $regex: search, $options: 'i' } } : {};
+  
+  const posts = await Post.find(query)
+    .populate('user', 'fullName username avatarUrl')
+    .sort('-createdAt')
+    .skip((page - 1) * limit)
+    .limit(Number(limit));
+
+  const total = await Post.countDocuments(query);
+  res.json({ success: true, data: posts, total, pages: Math.ceil(total / limit) });
+});
+
+export const deleteAdminPost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const post = await Post.findById(id);
+  if (!post) return res.status(404).json({ message: 'المنشور غير موجود' });
+
+  await Post.findByIdAndDelete(id);
+
+  await AdminLog.create({
+    admin: req.user._id,
+    action: 'DELETE_POST',
+    targetType: 'Post',
+    targetId: id,
+    details: { text: post.text },
+    ipAddress: req.ip
+  });
+
+  res.json({ success: true, message: 'تم حذف المنشور بنجاح' });
+});
+
+export const getAdminStories = asyncHandler(async (req, res) => {
+  const stories = await Story.find()
+    .populate('user', 'fullName username avatarUrl')
+    .sort('-createdAt');
+  res.json({ success: true, data: stories });
+});
+
+export const deleteAdminStory = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const story = await Story.findById(id);
+  if (!story) return res.status(404).json({ message: 'القصة غير موجودة' });
+
+  await Story.findByIdAndDelete(id);
+
+  await AdminLog.create({
+    admin: req.user._id,
+    action: 'DELETE_STORY',
+    targetType: 'Story',
+    targetId: id,
+    ipAddress: req.ip
+  });
+
+  res.json({ success: true, message: 'تم حذف القصة بنجاح' });
+});
