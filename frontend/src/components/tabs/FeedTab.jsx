@@ -126,10 +126,11 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
   };
 
   const getImageUrl = (url) => {
-    if (!url || url.includes('localhost') || url.includes('127.0.0.1')) return "https://via.placeholder.com/150";
+    if (!url) return "https://ui-avatars.com/api/?name=User&background=random";
     if (url.startsWith('http')) return url;
+    
     const baseUrl = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';
-    const cleanBase = baseUrl.endsWith('/api') ? baseUrl.replace('/api', '') : baseUrl;
+    const cleanBase = baseUrl.replace(/\/api\/?$/, '');
     return `${cleanBase}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
