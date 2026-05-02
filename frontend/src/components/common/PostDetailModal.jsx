@@ -69,9 +69,10 @@ const PostDetailModal = ({ post, onClose }) => {
     }
   };
 
-  const isAdmin = user && (user.role === 'admin' || user.role === 'superadmin');
+  const userRole = user?.role?.toLowerCase();
+  const isAdmin = userRole === 'admin' || userRole === 'superadmin' || userRole === 'moderator';
   const postUserId = localPost.user?._id || localPost.user;
-  const isOwner = user && postUserId && postUserId.toString() === user._id.toString();
+  const isOwner = user?._id && postUserId && postUserId.toString() === user._id.toString();
 
   return (
     <div 
