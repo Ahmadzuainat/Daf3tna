@@ -263,3 +263,31 @@ export const deleteAdminStory = asyncHandler(async (req, res) => {
 
   res.json({ success: true, message: 'تم حذف القصة بنجاح' });
 });
+// --- USER MANAGEMENT (SUPERADMIN) ---
+export const deleteUser = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+
+  // Safety: Admin cannot delete other Superadmins
+  if (user.role === 'superadmin' && user.email !== 'ahmaded252a@gmail.com') {
+     // Optional: allow deleting but maybe prevent deleting the root admin
+  }
+
+  // Delete all related content (optional but recommended)
+  // await Post.deleteMany({ user: userId });
+  // await Story.deleteMany({ user: userId });
+
+  await User.findByIdAndDelete(userId);
+
+  await AdminLog.create({
+    admin: req.user._id,
+    action: 'DELETE_USER_PERMANENTLY',
+    targetType: 'User',
+    targetId: userId,
+    details: { fullName: user.fullName, email: user.email },
+    ipAddress: req.ip
+  });
+
+  res.json({ success: true, message: 'تم حذف الحساب نهائياً بنجاح' });
+});

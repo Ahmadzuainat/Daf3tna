@@ -16,7 +16,8 @@ import {
   getAdminPosts,
   deleteAdminPost,
   getAdminStories,
-  deleteAdminStory
+  deleteAdminStory,
+  deleteUser
 } from '../controllers/adminController.js';
 import { protect, moderatorOnly, adminOnly, superAdminOnly } from '../middleware/authMiddleware.js';
 
@@ -48,6 +49,7 @@ router.delete('/content/stories/:id', moderatorOnly, deleteAdminStory);
 router.post('/security/ban-ip', superAdminOnly, banIP);
 router.get('/security/bans', superAdminOnly, getBans);
 router.get('/logs', superAdminOnly, getAdminLogs);
+router.delete('/users/:userId', superAdminOnly, deleteUser);
 router.post('/force-logout-all', superAdminOnly, logoutEveryone); // TASK 8
 
 export default router;

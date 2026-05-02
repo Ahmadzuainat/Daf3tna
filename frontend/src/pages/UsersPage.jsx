@@ -132,6 +132,29 @@ const UsersPage = () => {
                     >
                       {u.status === 'active' ? <UserX size={20} /> : <UserCheck size={20} />}
                     </button>
+
+                    {authUser.role === 'superadmin' && (
+                      <button 
+                        onClick={async () => {
+                          if (!window.confirm(`هل أنت متأكد من حذف حساب ${u.fullName} نهائياً من قاعدة البيانات؟ لا يمكن التراجع عن هذا الإجراء!`)) return;
+                          try {
+                            await api.delete(`/admin/users/${u._id}`);
+                            toast.success('تم حذف المستخدم نهائياً');
+                            fetchUsers();
+                          } catch (err) {
+                            toast.error('فشل الحذف');
+                          }
+                        }}
+                        style={{ 
+                          padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                          background: 'rgba(239, 68, 68, 0.2)',
+                          color: '#ef4444'
+                        }}
+                        title="حذف الحساب نهائياً"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
