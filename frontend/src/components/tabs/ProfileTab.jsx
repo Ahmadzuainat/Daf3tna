@@ -131,7 +131,7 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick, setSelec
   };
 
   const getImageUrl = (url) => {
-    if (!url) return "https://via.placeholder.com/150";
+    if (!url || url.includes('localhost') || url.includes('127.0.0.1')) return "https://via.placeholder.com/150";
     if (url.startsWith('http')) return url;
     const baseUrl = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';
     const cleanBase = baseUrl.endsWith('/api') ? baseUrl.replace('/api', '') : baseUrl;
