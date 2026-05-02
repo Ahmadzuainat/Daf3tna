@@ -69,7 +69,7 @@ const PostDetailModal = ({ post, onClose }) => {
     }
   };
 
-  const userRole = (user?.role || '').toLowerCase().trim();
+  const userRole = user?.role?.toLowerCase();
   const isAdmin = userRole === 'admin' || userRole === 'superadmin' || userRole === 'moderator';
   const postUserId = localPost.user?._id || localPost.user;
   const isOwner = user?._id && postUserId && postUserId.toString() === user._id.toString();
@@ -136,19 +136,18 @@ const PostDetailModal = ({ post, onClose }) => {
             </div>
 
             {(isOwner || isAdmin) && (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span style={{ color: '#F59E0B', fontSize: '0.7rem', fontWeight: 'bold', marginRight: '4px' }}>تحكم</span>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                 {isOwner && (
                   <button 
                     onClick={() => setIsEditing(!isEditing)}
-                    style={{ background: isEditing ? '#F59E0B' : 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ background: isEditing ? '#F59E0B' : 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px' }}
                   >
                     <Edit size={18} color={isEditing ? 'black' : '#F59E0B'} />
                   </button>
                 )}
                 <button 
                   onClick={handleDelete}
-                  style={{ background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', padding: '6px' }}
                 >
                   <Trash2 size={18} color="#F59E0B" />
                 </button>
