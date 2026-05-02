@@ -7,6 +7,7 @@ import Notebook from '../models/Notebook.js';
 import Instant from '../models/Instant.js';
 import TimeCapsule from '../models/TimeCapsule.js';
 import { protect } from '../middleware/authMiddleware.js';
+import AdminLog from '../models/AdminLog.js';
 
 const router = express.Router();
 

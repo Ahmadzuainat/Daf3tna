@@ -1,4 +1,6 @@
 import SiteSetting from '../models/SiteSetting.js';
+import User from '../models/User.js';
+import jwt from 'jsonwebtoken';
 
 /**
  * Middleware to check global site settings and feature toggles.
@@ -10,8 +12,21 @@ export const checkSystemStatus = async (req, res, next) => {
     const settings = await SiteSetting.findOne();
     if (!settings) return next();
 
-    const isSuperAdmin = req.user && req.user.role === 'superadmin';
-    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
+    // If req.user is not yet populated (middleware running before protect), 
+    // we try to extract it from token to allow admin bypass
+    let userRole = req.user?.role;
+    if (!userRole && req.headers.authorization) {
+       try {
+         const token = req.headers.authorization.split(' ')[1];
+         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+         const user = await User.findById(decoded.id).select('role');
+         if (user) userRole = user.role;
+       } catch (err) {
+         // Token invalid or expired, proceed as guest
+       }
+    }
+
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
     // 1. Maintenance / Lockdown Checks
     const isAuthRoute = req.path.startsWith('/api/auth');
