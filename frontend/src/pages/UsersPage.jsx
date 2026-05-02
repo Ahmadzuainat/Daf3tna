@@ -138,26 +138,29 @@ const UsersPage = () => {
                     </button>
 
                     {authUser?.role?.toLowerCase() === 'superadmin' && (
-                      <button 
-                        onClick={async () => {
-                          alert('تم الضغط على زر الحذف');
-                          if (!window.confirm('حذف نهائي؟')) return;
-                          try {
-                            await api.delete(`admin/users/${u._id}`);
-                            toast.success('تم الحذف');
-                            fetchUsers();
-                          } catch (err) {
-                            alert('خطأ: ' + err.message);
+                      <div 
+                        onClick={() => {
+                          if (window.confirm(`هل أنت متأكد من حذف حساب ${u.fullName} نهائياً؟`)) {
+                            api.delete(`admin/users/${u._id}`)
+                              .then(() => {
+                                toast.success('تم الحذف بنجاح');
+                                fetchUsers();
+                              })
+                              .catch(err => {
+                                toast.error('فشل الحذف: ' + err.message);
+                              });
                           }
                         }}
                         style={{ 
-                          padding: '10px', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer',
+                          padding: '10px', borderRadius: '12px', border: '1px solid #ef4444', cursor: 'pointer',
                           background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444',
-                          zIndex: 999, position: 'relative'
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          pointerEvents: 'auto', userSelect: 'none'
                         }}
+                        title="حذف الحساب نهائياً"
                       >
                         <Trash2 size={20} />
-                      </button>
+                      </div>
                     )}
                   </div>
                 </td>
