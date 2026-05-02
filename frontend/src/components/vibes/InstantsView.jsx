@@ -151,21 +151,40 @@ const InstantFullScreenView = ({ instant, onClose }) => {
   };
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'black', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ position: 'absolute', top: '16px', left: '16px', right: '16px', height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', zIndex: 10 }}>
-        <div style={{ height: '100%', background: 'white', borderRadius: '2px', width: `${progress}%` }} />
-      </div>
-      <div style={{ position: 'absolute', top: '32px', left: '16px', right: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src={instant.user?.avatarUrl || "https://ui-avatars.com/api/?name=U"} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid white' }} />
-          <span style={{ color: 'white', fontWeight: 'bold' }}>{currentInstant.user?.fullName}</span>
+    <div 
+      onClick={onClose} 
+      style={{ 
+        position: 'fixed', inset: 0, 
+        background: 'rgba(0,0,0,0.95)', 
+        zIndex: 9999, 
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px'
+      }}
+    >
+      <div 
+        onClick={e => e.stopPropagation()}
+        style={{ 
+          width: '100%', maxWidth: '420px', height: '90vh', 
+          background: '#000', borderRadius: '24px', position: 'relative', overflow: 'hidden',
+          boxShadow: '0 0 40px rgba(0,0,0,0.5)',
+          display: 'flex', flexDirection: 'column'
+        }}
+      >
+        <div style={{ position: 'absolute', top: '16px', left: '16px', right: '16px', height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', zIndex: 10 }}>
+          <div style={{ height: '100%', background: 'white', borderRadius: '2px', width: `${progress}%` }} />
         </div>
-        <div onClick={handleLike} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: currentInstant.likes?.includes(user?._id) ? '#EF4444' : 'white', background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: '20px' }}>
-          <Heart size={20} fill={currentInstant.likes?.includes(user?._id) ? '#EF4444' : 'none'} />
-          <span style={{ fontWeight: 'bold' }}>{currentInstant.likes?.length || 0}</span>
+        <div style={{ position: 'absolute', top: '32px', left: '16px', right: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src={instant.user?.avatarUrl || "https://ui-avatars.com/api/?name=U"} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid white', objectFit: 'cover' }} />
+            <span style={{ color: 'white', fontWeight: 'bold' }}>{currentInstant.user?.fullName}</span>
+          </div>
+          <div onClick={handleLike} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: currentInstant.likes?.includes(user?._id) ? '#EF4444' : 'white', background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: '20px', cursor: 'pointer' }}>
+            <Heart size={20} fill={currentInstant.likes?.includes(user?._id) ? '#EF4444' : 'none'} />
+            <span style={{ fontWeight: 'bold' }}>{currentInstant.likes?.length || 0}</span>
+          </div>
         </div>
+        <img src={instant.mediaUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </div>
-      <img src={instant.mediaUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
     </div>
   );
 };

@@ -13,6 +13,8 @@ const HubOpenView = ({ hub, onBack }) => {
   const [activeChannel, setActiveChannel] = useState(hub.textChannels?.[0]?.name || 'عام');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [voiceCall, setVoiceCall] = useState(null);
+  const [typingData, setTypingData] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -43,7 +45,11 @@ const HubOpenView = ({ hub, onBack }) => {
     };
 
     const handleTypingUpdate = ({ user: typingUser, isTyping }) => {
-      // Local state for typing could be managed here if needed
+      if (isTyping && typingUser._id !== user._id) {
+        setTypingData(typingUser);
+      } else {
+        setTypingData(null);
+      }
     };
 
     if (socket) {
@@ -91,6 +97,15 @@ const HubOpenView = ({ hub, onBack }) => {
     } catch (err) {
       console.error("Send error:", err);
     }
+  };
+
+  const handleJoinVoice = (ch) => {
+    setVoiceCall({
+      channelName: getTextChannelName(ch),
+      participants: [user],
+      isMicOn: true,
+      isCamOn: false
+    });
   };
 
   if (voiceCall) {
@@ -212,7 +227,7 @@ const HubOpenView = ({ hub, onBack }) => {
                   <span style={{ color: 'white', fontWeight: 'bold' }}>{m.sender?.fullName || 'User'}</span>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{new Date(m.createdAt).toLocaleTimeString()}</span>
                 </div>
-                <p style={{ color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '0 12px 12px 12px', marginTop: '4px' }}>{m.content}</p>
+                <p style={{ color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '0 12px 12px 12px', marginTop: '4px' }}>{m.text}</p>
               </div>
             </div>
           ))}

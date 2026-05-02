@@ -237,8 +237,8 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             style={{ 
-              width: '100%', 
-              maxWidth: '500px', 
+              width: '95%', 
+              maxWidth: '420px', 
               maxHeight: '85vh', 
               background: 'var(--bg-dark)', 
               borderRadius: '32px', 
@@ -267,26 +267,26 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
             <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '80px' }} className="hide-scrollbar">
               <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <img src={selectedPost.user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--primary-blue)', objectFit: 'cover' }} />
+                  <img src={getImageUrl(selectedPost.user?.avatarUrl)} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid #3b82f6', objectFit: 'cover' }} />
                   <div>
                     <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'white' }}>{selectedPost.user?.fullName || 'User'}</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(selectedPost.createdAt).toLocaleDateString('ar-EG')}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{new Date(selectedPost.createdAt).toLocaleDateString('ar-EG')}</span>
                   </div>
                 </div>
 
-                {selectedPost.user?._id === user?._id && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                {( (selectedPost.user?._id || selectedPost.user) === user?._id ) && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
                       onClick={() => setIsEditingPost(!isEditingPost)}
-                      style={{ background: isEditingPost ? '#F59E0B' : 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px' }}
+                      style={{ background: isEditingPost ? '#f59e0b' : 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer' }}
                     >
-                      <Edit size={18} color={isEditingPost ? 'black' : '#F59E0B'} />
+                      <Edit size={18} color={isEditingPost ? 'white' : '#f59e0b'} />
                     </button>
                     <button 
                       onClick={() => handleDeletePost(selectedPost._id)}
-                      style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', padding: '6px' }}
+                      style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer' }}
                     >
-                      <Trash2 size={18} color="#F59E0B" />
+                      <Trash2 size={18} color="#ef4444" />
                     </button>
                   </div>
                 )}
@@ -368,7 +368,24 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
       )}
 
       {viewingStory && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'black', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
+        <div 
+          onClick={() => setViewingStory(null)} 
+          style={{ 
+            position: 'fixed', inset: 0, 
+            background: 'rgba(0,0,0,0.9)', 
+            zIndex: 4000, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            style={{ 
+              width: '100%', maxWidth: '420px', height: '90vh', 
+              background: '#000', borderRadius: '24px', position: 'relative', overflow: 'hidden',
+              boxShadow: '0 0 40px rgba(0,0,0,0.5)'
+            }}
+          >
           <div style={{ position: 'absolute', top: '16px', left: '16px', right: '16px', display: 'flex', gap: '4px' }}>
             <div style={{ flex: 1, height: '3px', background: 'white', borderRadius: '2px' }} />
           </div>
@@ -385,6 +402,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
             </div>
           </header>
           <img src={getImageUrl(viewingStory.mediaUrl)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onClick={() => setViewingStory(null)} />
+          </div>
         </div>
       )}
     </div>
