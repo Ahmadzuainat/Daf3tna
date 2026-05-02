@@ -130,6 +130,14 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick, setSelec
     }
   };
 
+  const getImageUrl = (url) => {
+    if (!url) return "https://via.placeholder.com/150";
+    if (url.startsWith('http')) return url;
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';
+    const cleanBase = baseUrl.endsWith('/api') ? baseUrl.replace('/api', '') : baseUrl;
+    return `${cleanBase}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
   const displayUser = isOwnProfile ? user : (fetchedUser || profileUser);
 
   return (
@@ -171,10 +179,10 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick, setSelec
 
           <div style={{ display: 'flex', gap: '8px', paddingBottom: '10px' }}>
             {isOwnProfile ? (
-              <>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-start' }}>
                 <button 
                   onClick={() => setShowCreateModal(true)}
-                  style={{ background: 'var(--primary-blue)', border: 'none', color: 'white', padding: '8px 20px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  style={{ background: 'var(--primary-blue)', border: 'none', color: 'white', padding: '10px 16px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', flex: '1', minWidth: '120px', justifyContent: 'center' }}
                 >
                   <PlusCircle size={18} />
                   منشور جديد
@@ -182,15 +190,15 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick, setSelec
                 <button 
                   onClick={() => isEditing ? handleSaveInfo() : setIsEditing(true)}
                   disabled={saving}
-                  style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', padding: '8px 20px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', flex: '1', minWidth: '100px', justifyContent: 'center' }}
                 >
                   {isEditing ? <Save size={18} /> : <Edit3 size={18} />}
                   {isEditing ? 'حفظ' : 'تعديل'}
                 </button>
-                <button onClick={onSettingsClick} style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', padding: '8px', borderRadius: '12px' }}>
+                <button onClick={onSettingsClick} style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', padding: '10px', borderRadius: '12px' }}>
                   <Settings size={20} />
                 </button>
-              </>
+              </div>
             ) : (
               <button 
                 onClick={handleFollowToggle}
@@ -262,7 +270,7 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick, setSelec
                 onClick={() => handlePostClick(post)}
                 style={{ aspectRatio: '1/1', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }}
               >
-                <img src={post.mediaUrls?.[0] || "https://via.placeholder.com/150"} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={getImageUrl(post.mediaUrls?.[0])} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             )) : (
               <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>

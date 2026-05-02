@@ -544,6 +544,19 @@ export const useAppStore = create((set, get) => ({
     } catch (err) { console.error('fetchUserPosts:', err); throw err; }
   },
 
+  updatePost: async (postId, text) => {
+    try {
+      const res = await api.put(`/posts/${postId}`, { text });
+      set(state => ({
+        posts: state.posts.map(p => p._id === postId ? res.data : p)
+      }));
+      return res.data;
+    } catch (err) {
+      console.error('updatePost:', err);
+      throw err;
+    }
+  },
+
   deletePost: async (postId) => {
     try {
       await api.delete(`/posts/${postId}`);

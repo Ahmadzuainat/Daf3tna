@@ -15,10 +15,12 @@ const PostSkeleton = () => (
 );
 
 const FeedTab = ({ selectedPost, setSelectedPost }) => {
-  const { posts, stories, fetchPosts, fetchStories, likePost, commentPost, addStory, deleteStory, viewStory, onlineUsers, pagination, setScrollPosition, scrollPositions, deletePost } = useAppStore();
+  const { posts, stories, fetchPosts, fetchStories, likePost, commentPost, addStory, deleteStory, viewStory, onlineUsers, pagination, setScrollPosition, scrollPositions, deletePost, updatePost, fetchPostDetails } = useAppStore();
   const { user } = useAuthStore();
   const [commentText, setCommentText] = useState('');
   const [viewingStory, setViewingStory] = useState(null);
+  const [isEditingPost, setIsEditingPost] = useState(false);
+  const [editText, setEditText] = useState('');
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -101,11 +103,34 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
     try {
       const details = await fetchPostDetails(post._id);
       setSelectedPost(details);
+      setEditText(details.text || '');
+      setIsEditingPost(false);
     } catch (err) {
-      // Fallback to basic post data if fetch fails
       setSelectedPost(post);
+      setEditText(post.text || '');
+      setIsEditingPost(false);
       toast.error('فشل تحميل تفاصيل المنشور');
     }
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editText.trim()) return toast.error('النص لا يمكن أن يكون فارغاً');
+    try {
+      const updated = await updatePost(selectedPost._id, editText);
+      setSelectedPost(prev => ({ ...prev, text: updated.text }));
+      setIsEditingPost(false);
+      toast.success('تم تحديث المنشور');
+    } catch (err) {
+      toast.error('فشل تحديث المنشور');
+    }
+  };
+
+  const getImageUrl = (url) => {
+    if (!url) return "https://via.placeholder.com/150";
+    if (url.startsWith('http')) return url;
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';
+    const cleanBase = baseUrl.endsWith('/api') ? baseUrl.replace('/api', '') : baseUrl;
+    return `${cleanBase}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
   return (
@@ -125,7 +150,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
           <div className="hide-scrollbar" style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
             {onlineUsers.map(u => (
               <div key={u._id} style={{ position: 'relative', flexShrink: 0 }}>
-                <img src={u.avatarUrl || "https://ui-avatars.com/api/?name=U"} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #10B981', objectFit: 'cover' }} />
+                <img src={getImageUrl(u.avatarUrl)} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #10B981', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: '12px', height: '12px', background: '#10B981', borderRadius: '50%', border: '2px solid var(--bg-dark)' }} />
               </div>
             ))}
@@ -149,7 +174,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
             <div key={story._id} onClick={() => { setViewingStory(story); viewStory(story._id); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', minWidth: '84px', cursor: 'pointer' }}>
               <div style={{ width: '84px', height: '84px', borderRadius: '50%', background: !isViewed ? 'linear-gradient(135deg, #F59E0B, #EF4444, #D946EF)' : 'rgba(255,255,255,0.2)', padding: '3px' }}>
                 <div style={{ width: '100%', height: '100%', borderRadius: '50%', backgroundColor: 'var(--bg-dark)', border: '2px solid var(--bg-dark)', overflow: 'hidden' }}>
-                  <img src={story.mediaUrl} alt={story.user?.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={getImageUrl(story.mediaUrl)} alt={story.user?.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
               </div>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '500' }}>{story.user?.fullName?.split(' ')[0]}</span>
@@ -171,7 +196,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
               whileHover={{ opacity: 0.8 }}
             >
               {post.mediaUrls?.[0] ? (
-                <img src={post.mediaUrls[0]} alt="post" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={getImageUrl(post.mediaUrls[0])} alt="post" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', textAlign: 'center', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
                   {post.text}
@@ -252,10 +277,10 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
                 {selectedPost.user?._id === user?._id && (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
-                      onClick={() => toast.info('ميزة التعديل قيد التطوير')}
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px' }}
+                      onClick={() => setIsEditingPost(!isEditingPost)}
+                      style={{ background: isEditingPost ? 'var(--primary-blue)' : 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px' }}
                     >
-                      <Edit size={18} color="var(--text-secondary)" />
+                      <Edit size={18} color={isEditingPost ? 'white' : 'var(--text-secondary)'} />
                     </button>
                     <button 
                       onClick={() => handleDeletePost(selectedPost._id)}
@@ -267,9 +292,25 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
                 )}
               </div>
 
-            {selectedPost.text && <p style={{ padding: '0 16px', fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '16px', color: 'white' }}>{selectedPost.text}</p>}
+            {isEditingPost ? (
+              <div style={{ padding: '0 16px 16px 16px' }}>
+                <textarea 
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'white', padding: '12px', minHeight: '100px', marginBottom: '12px', outline: 'none' }}
+                />
+                <button 
+                  onClick={handleUpdatePost}
+                  style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '10px', fontWeight: 'bold' }}
+                >
+                  حفظ التعديلات
+                </button>
+              </div>
+            ) : (
+              selectedPost.text && <p style={{ padding: '0 16px', fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '16px', color: 'white' }}>{selectedPost.text}</p>
+            )}
 
-            {selectedPost.mediaUrls?.[0] && <img src={selectedPost.mediaUrls[0]} style={{ width: '100%', maxHeight: '500px', objectFit: 'contain', background: '#000' }} />}
+            {selectedPost.mediaUrls?.[0] && <img src={getImageUrl(selectedPost.mediaUrls[0])} style={{ width: '100%', maxHeight: '500px', objectFit: 'contain', background: '#000' }} />}
 
             <div style={{ display: 'flex', justifyContent: 'space-around', padding: '16px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
               <motion.div 
@@ -343,7 +384,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
               <X size={32} color="white" onClick={() => setViewingStory(null)} style={{ cursor: 'pointer', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
             </div>
           </header>
-          <img src={viewingStory.mediaUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onClick={() => setViewingStory(null)} />
+          <img src={getImageUrl(viewingStory.mediaUrl)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onClick={() => setViewingStory(null)} />
         </div>
       )}
     </div>

@@ -34,6 +34,25 @@ router.get('/user/:userId', protect, async (req, res) => {
   }
 });
 
+// Edit Post
+router.put('/:id', protect, async (req, res) => {
+  try {
+    const { text } = req.body;
+    const post = await Post.findById(req.params.id);
+    if (!post || post.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'غير مسموح' });
+    }
+    post.text = text || post.text;
+    await post.save();
+    
+    const updated = await Post.findById(req.params.id).populate('user', 'fullName avatarUrl username');
+    req.io.to(req.user.batchId).emit('post_updated', updated);
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Delete Post
 router.delete('/:id', protect, async (req, res) => {
   try {
