@@ -26,6 +26,7 @@ import HubOpenView from '../components/hubs/HubOpenView';
 import InboxTab from '../components/tabs/InboxTab';
 import DMChatTab from '../components/tabs/DMChatTab';
 import { GlobalHeader, NotificationDrawer } from '../components/common/LayoutComponents';
+import PostDetailModal from '../components/common/PostDetailModal';
 
 // Services
 import api from '../services/api';
@@ -271,6 +272,14 @@ const HomePage = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Global Post Detail Modal */}
+      {selectedPost && (
+        <PostDetailModal 
+          post={selectedPost} 
+          onClose={() => setSelectedPost(null)} 
+        />
       )}
     </div>
   );
