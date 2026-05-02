@@ -42,10 +42,11 @@ export const getFeed = asyncHandler(async (req, res) => {
 
 // @desc    Create Post with Cloudinary
 export const createPost = asyncHandler(async (req, res) => {
-  const { text } = req.body;
-  const mediaUrls = [];
+  const { text, mediaUrls: bodyMediaUrls } = req.body;
+  let mediaUrls = Array.isArray(bodyMediaUrls) ? bodyMediaUrls : [];
   const mediaPublicIds = [];
 
+  // Handle direct file uploads if any
   if (req.files && req.files.length > 0) {
     for (const file of req.files) {
       const result = await uploadToCloudinary(file.buffer, 'posts');
