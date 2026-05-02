@@ -123,14 +123,7 @@ const PostDetailModal = ({ post, onClose }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <img src={getImageUrl(localPost.user?.avatarUrl)} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--primary-blue)', objectFit: 'cover' }} />
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'white' }}>{localPost.user?.fullName || 'User'}</h4>
-                  {isAdmin && (
-                    <span style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.3)', fontWeight: 'bold' }}>
-                      {userRole?.toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'white' }}>{localPost.user?.fullName || 'User'}</h4>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(localPost.createdAt).toLocaleDateString('ar-EG')}</span>
               </div>
             </div>
