@@ -87,31 +87,72 @@ const ContentPage = () => {
       </div>
 
       <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
           {items.map((item) => (
-            <div key={item._id} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', overflow: 'hidden', border: '1px solid #333' }}>
-              {item.mediaUrls?.[0] && (
-                <img src={getImageUrl(item.mediaUrls[0])} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
-              )}
-              {item.mediaUrl && ( // For stories
-                <img src={getImageUrl(item.mediaUrl)} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
-              )}
-              <div style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                   <img src={getImageUrl(item.user?.avatarUrl)} style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
-                   <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{item.user?.fullName}</span>
-                </div>
-                <p style={{ color: 'white', fontSize: '0.9rem', marginBottom: '16px', height: '40px', overflow: 'hidden' }}>{item.text || 'محتوى مرئي'}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                   <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{new Date(item.createdAt).toLocaleDateString()}</span>
-                   <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => handleDelete(item._id)} style={{ padding: '6px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
-                        <Trash2 size={16} />
-                      </button>
-                      <button style={{ padding: '6px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: 'none', cursor: 'pointer' }}>
-                        <Eye size={16} />
-                      </button>
+            <div key={item._id} className="instagram-card" style={{ 
+              background: 'rgba(15, 23, 42, 0.6)', 
+              borderRadius: '20px', 
+              overflow: 'hidden', 
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+              transition: 'transform 0.3s ease'
+            }}>
+              {/* Card Header */}
+              <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', padding: '2px', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
+                     <img src={getImageUrl(item.user?.avatarUrl)} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '2px solid #0f172a' }} />
                    </div>
+                   <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>{item.user?.fullName}</span>
+                </div>
+                <button style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                  <MoreVertical size={18} />
+                </button>
+              </div>
+
+              {/* Card Media */}
+              <div style={{ width: '100%', aspectRatio: '1/1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+                {(item.mediaUrls?.[0] || item.mediaUrl) ? (
+                  <img 
+                    src={getImageUrl(item.mediaUrls?.[0] || item.mediaUrl)} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <div style={{ color: '#334155', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <FileText size={48} />
+                    <span style={{ fontSize: '0.8rem' }}>منشور نصي فقط</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Card Footer */}
+              <div style={{ padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <Star size={24} color="#ef4444" fill="#ef4444" style={{ cursor: 'pointer' }} />
+                    <MessageSquare size={24} color="white" style={{ cursor: 'pointer' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      onClick={() => handleDelete(item._id)} 
+                      style={{ padding: '8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      title="حذف المنشور"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    <button style={{ padding: '8px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: 'none', cursor: 'pointer' }}>
+                      <Eye size={18} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div style={{ color: 'white', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                  <span style={{ fontWeight: 'bold', marginLeft: '8px' }}>{item.user?.username || item.user?.fullName}</span>
+                  {item.text || (activeTab === 'stories' ? 'قصة جديدة' : 'لا يوجد نص')}
+                </div>
+                
+                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '8px', textTransform: 'uppercase' }}>
+                  {new Date(item.createdAt).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' })}
                 </div>
               </div>
             </div>
