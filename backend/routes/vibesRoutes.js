@@ -390,7 +390,7 @@ router.post('/instants', protect, async (req, res) => {
       user: req.user._id,
       batchId: req.user.batchId,
       mediaUrl,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h
+      expiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000) // 6h
     });
     await instant.save();
     const populated = await instant.populate('user', 'fullName avatarUrl username');

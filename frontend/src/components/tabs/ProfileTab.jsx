@@ -2,10 +2,11 @@ import React, { useState, useRef } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAppStore } from '../../store/useAppStore';
 import { motion } from 'framer-motion';
-import { Camera, Edit3, Settings, Grid, Bookmark, User as UserIcon, LogOut, ChevronLeft, Save } from 'lucide-react';
+import { Camera, Edit3, Settings, Grid, Bookmark, User as UserIcon, LogOut, ChevronLeft, Save, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import CreatePostModal from '../common/CreatePostModal';
 
-const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick }) => {
+const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick, setSelectedPost }) => {
   const { user, updateUser } = useAuthStore();
   const { updateProfile, fetchUserPosts } = useAppStore();
   const [posts, setPosts] = useState([]);
@@ -14,7 +15,8 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick }) => {
   const [saving, setSaving] = useState(false);
   const [fetchedUser, setFetchedUser] = useState(null);
   const [followStatus, setFollowStatus] = useState('none'); // 'none', 'following', 'requested'
-  const { fetchUserProfile, followUser } = useAppStore();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { fetchUserProfile, followUser, fetchPostDetails } = useAppStore();
   
   const [editData, setEditData] = useState({
     fullName: user?.fullName || '',
@@ -118,6 +120,16 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick }) => {
     }
   };
 
+  const handlePostClick = async (post) => {
+    try {
+      const details = await fetchPostDetails(post._id);
+      setSelectedPost(details);
+    } catch (err) {
+      setSelectedPost(post);
+      toast.error('فشل تحميل تفاصيل المنشور');
+    }
+  };
+
   const displayUser = isOwnProfile ? user : (fetchedUser || profileUser);
 
   return (
@@ -160,6 +172,13 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick }) => {
           <div style={{ display: 'flex', gap: '8px', paddingBottom: '10px' }}>
             {isOwnProfile ? (
               <>
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  style={{ background: 'var(--primary-blue)', border: 'none', color: 'white', padding: '8px 20px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <PlusCircle size={18} />
+                  منشور جديد
+                </button>
                 <button 
                   onClick={() => isEditing ? handleSaveInfo() : setIsEditing(true)}
                   disabled={saving}
@@ -238,7 +257,11 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick }) => {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
             {posts.length > 0 ? posts.map(post => (
-              <div key={post._id} style={{ aspectRatio: '1/1', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div 
+                key={post._id} 
+                onClick={() => handlePostClick(post)}
+                style={{ aspectRatio: '1/1', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }}
+              >
                 <img src={post.mediaUrls?.[0] || "https://via.placeholder.com/150"} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             )) : (
@@ -248,6 +271,12 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick }) => {
             )}
           </div>
         )}
+
+        <CreatePostModal 
+          isOpen={showCreateModal} 
+          onClose={() => setShowCreateModal(false)} 
+          onPostCreated={() => fetchUserPosts(displayUser._id).then(setPosts)}
+        />
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Repeat, Plus, Send, X, Camera, Zap, Check } from 'lucide-react';
+import { Heart, MessageCircle, Repeat, Plus, Send, X, Camera, Zap, Check, MoreVertical, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 
@@ -15,7 +15,7 @@ const PostSkeleton = () => (
 );
 
 const FeedTab = ({ selectedPost, setSelectedPost }) => {
-  const { posts, stories, fetchPosts, fetchStories, likePost, commentPost, addStory, viewStory, onlineUsers, pagination, setScrollPosition, scrollPositions } = useAppStore();
+  const { posts, stories, fetchPosts, fetchStories, likePost, commentPost, addStory, deleteStory, viewStory, onlineUsers, pagination, setScrollPosition, scrollPositions, deletePost } = useAppStore();
   const { user } = useAuthStore();
   const [commentText, setCommentText] = useState('');
   const [viewingStory, setViewingStory] = useState(null);
@@ -72,6 +72,28 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
       }));
     } catch (err) {
       toast.error('فشل إضافة التعليق');
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا المنشور؟')) return;
+    try {
+      await deletePost(postId);
+      setSelectedPost(null);
+      toast.success('تم حذف المنشور');
+    } catch (err) {
+      toast.error('فشل حذف المنشور');
+    }
+  };
+
+  const handleDeleteStory = async (storyId) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذه القصة؟')) return;
+    try {
+      await deleteStory(storyId);
+      setViewingStory(null);
+      toast.success('تم حذف القصة');
+    } catch (err) {
+      toast.error('فشل حذف القصة');
     }
   };
 
@@ -218,12 +240,31 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '80px' }} className="hide-scrollbar">
-              <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <img src={selectedPost.user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--primary-blue)', objectFit: 'cover' }} />
-                <div>
-                  <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'white' }}>{selectedPost.user?.fullName || 'User'}</h4>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(selectedPost.createdAt).toLocaleDateString('ar-EG')}</span>
+              <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <img src={selectedPost.user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--primary-blue)', objectFit: 'cover' }} />
+                  <div>
+                    <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'white' }}>{selectedPost.user?.fullName || 'User'}</h4>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(selectedPost.createdAt).toLocaleDateString('ar-EG')}</span>
+                  </div>
                 </div>
+
+                {selectedPost.user?._id === user?._id && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      onClick={() => toast.info('ميزة التعديل قيد التطوير')}
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px' }}
+                    >
+                      <Edit size={18} color="var(--text-secondary)" />
+                    </button>
+                    <button 
+                      onClick={() => handleDeletePost(selectedPost._id)}
+                      style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', padding: '6px' }}
+                    >
+                      <Trash2 size={18} color="#EF4444" />
+                    </button>
+                  </div>
+                )}
               </div>
 
             {selectedPost.text && <p style={{ padding: '0 16px', fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '16px', color: 'white' }}>{selectedPost.text}</p>}
@@ -295,7 +336,12 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
               <img src={viewingStory.user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid white', objectFit: 'cover' }} />
               <span style={{ color: 'white', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{viewingStory.user?.fullName}</span>
             </div>
-            <X size={32} color="white" onClick={() => setViewingStory(null)} style={{ cursor: 'pointer', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {viewingStory.user?._id === user?._id && (
+                <Trash2 size={24} color="white" onClick={() => handleDeleteStory(viewingStory._id)} style={{ cursor: 'pointer', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
+              )}
+              <X size={32} color="white" onClick={() => setViewingStory(null)} style={{ cursor: 'pointer', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
+            </div>
           </header>
           <img src={viewingStory.mediaUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onClick={() => setViewingStory(null)} />
         </div>

@@ -58,4 +58,17 @@ router.post('/:id/view', protect, async (req, res) => {
   }
 });
 
+// Delete Story
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    const story = await Story.findOne({ _id: req.params.id, user: req.user._id });
+    if (!story) return res.status(404).json({ message: 'القصة غير موجودة أو غير مصرح لك بحذفها' });
+    
+    await Story.findByIdAndDelete(req.params.id);
+    res.json({ message: 'تم حذف القصة بنجاح' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;

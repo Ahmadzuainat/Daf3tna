@@ -223,7 +223,7 @@ const HomePage = () => {
               {activeTab === 'inbox' && <InboxTab onChatClick={openDMChat} onBack={() => setActiveTab('feed')} />}
               {activeTab === 'dm_chat' && <DMChatTab user={selectedDMUser} onBack={() => setActiveTab('inbox')} />}
               {activeTab === 'yearbook' && <YearbookTab onUserClick={openProfile} />}
-              {activeTab === 'profile' && <ProfileTab user={selectedProfile || user} isOwnProfile={!selectedProfile} onContentAdded={refreshUI} onSettingsClick={() => setActiveTab('settings')} />}
+              {activeTab === 'profile' && <ProfileTab user={selectedProfile || user} isOwnProfile={!selectedProfile} onContentAdded={refreshUI} onSettingsClick={() => setActiveTab('settings')} setSelectedPost={setSelectedPost} />}
               {activeTab === 'settings' && <SettingsTab onBack={() => setActiveTab('profile')} />}
             </motion.div>
           </AnimatePresence>

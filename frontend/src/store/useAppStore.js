@@ -156,6 +156,19 @@ export const useAppStore = create((set, get) => ({
     } catch (err) { console.error('viewStory:', err); }
   },
 
+  deleteStory: async (storyId) => {
+    try {
+      await api.delete(`/stories/${storyId}`);
+      set(state => ({
+        stories: state.stories.filter(s => s._id !== storyId)
+      }));
+      return true;
+    } catch (err) { 
+      console.error('deleteStory:', err); 
+      throw err;
+    }
+  },
+
   /* ─────────── HUBS ─────────── */
   fetchHubs: async () => {
     try {
