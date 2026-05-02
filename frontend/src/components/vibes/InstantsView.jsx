@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Trash2, Lock, Heart, X } from 'lucide-react';
+import { Camera, Trash2, Lock, Heart, X, ChevronLeft } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAppStore } from '../../store/useAppStore';
 import api from '../../services/api';
 import { toast } from 'sonner';
 
-const InstantsView = () => {
+const InstantsView = ({ onBack }) => {
   const { user } = useAuthStore();
   const { instants, fetchInstants, addInstant, deleteInstant } = useAppStore();
   const [selectedInstant, setSelectedInstant] = useState(null);
@@ -46,7 +46,13 @@ const InstantsView = () => {
 
   return (
     <div style={{ padding: '24px 16px', background: 'var(--bg-dark)', minHeight: '100vh' }}>
-      <header style={{ marginBottom: '32px', textAlign: 'center' }}>
+      <header style={{ marginBottom: '32px', textAlign: 'center', position: 'relative' }}>
+        <div 
+          onClick={onBack}
+          style={{ position: 'absolute', top: 0, left: 0, cursor: 'pointer', background: 'var(--glass)', borderRadius: '50%', padding: '8px', zIndex: 10, border: '1px solid var(--glass-border)' }}
+        >
+          <ChevronLeft size={24} color="white" />
+        </div>
         <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>اللقطات الفورية</h2>
         <p style={{ color: 'var(--text-secondary)' }}>شارك لحظاتك العفوية التي تختفي بسرعة</p>
       </header>
