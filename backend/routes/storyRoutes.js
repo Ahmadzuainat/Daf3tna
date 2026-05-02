@@ -61,8 +61,16 @@ router.post('/:id/view', protect, async (req, res) => {
 // Delete Story
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const story = await Story.findOne({ _id: req.params.id, user: req.user._id });
-    if (!story) return res.status(404).json({ message: 'القصة غير موجودة أو غير مصرح لك بحذفها' });
+    const story = await Story.findById(req.params.id);
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+
+    if (!story) {
+      return res.status(404).json({ message: 'القصة غير موجودة' });
+    }
+    
+    if (story.user.toString() !== req.user._id.toString() && !isAdmin) {
+      return res.status(403).json({ message: 'غير مسموح بحذف هذه القصة' });
+    }
     
     await Story.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف القصة بنجاح' });

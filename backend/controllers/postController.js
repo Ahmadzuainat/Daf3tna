@@ -20,8 +20,11 @@ export const getFeed = asyncHandler(async (req, res) => {
     .limit(Number(limit))
     .lean();
 
+  const isAdmin = ['admin', 'superadmin', 'moderator'].includes(user.role);
+
   const filteredPosts = posts.filter(post => {
     if (!post.user) return false; // Handle deleted users
+    if (isAdmin) return true;
     if (post.user._id.toString() === user._id.toString()) return true;
     if (!post.user.isPrivate) return true;
     return (post.user.followers || []).some(f => f.toString() === user._id.toString());
@@ -113,8 +116,9 @@ export const getPostDetails = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.id).populate('user', 'fullName username avatarUrl isPrivate followers');
   if (!post) return res.status(404).json({ message: 'المنشور غير موجود' });
 
-  // Privacy Check
-  if (post.user.isPrivate && 
+  // Privacy Check (Exempt Admins/Superadmins)
+  const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+  if (!isAdmin && post.user.isPrivate && 
       post.user._id.toString() !== req.user._id.toString() && 
       !post.user.followers.some(f => f.toString() === req.user._id.toString())) {
     return res.status(403).json({ message: 'هذا الحساب خاص' });
