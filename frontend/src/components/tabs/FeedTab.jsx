@@ -254,14 +254,14 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
             <div 
               onClick={() => setSelectedPost(null)}
               style={{ 
-                position: 'absolute', top: '16px', left: '16px', 
+                position: 'absolute', top: '12px', left: '12px', 
                 background: 'rgba(255,255,255,0.1)', 
-                borderRadius: '50%', padding: '8px', 
+                borderRadius: '50%', padding: '6px', 
                 cursor: 'pointer', zIndex: 10,
                 transition: 'all 0.2s'
               }}
             >
-              <X size={20} color="white" />
+              <X size={16} color="white" />
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '80px' }} className="hide-scrollbar">
@@ -275,18 +275,18 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
                 </div>
 
                 {selectedPost.user?._id === user?._id && (
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                     <button 
                       onClick={() => setIsEditingPost(!isEditingPost)}
-                      style={{ background: isEditingPost ? 'var(--primary-blue)' : 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px' }}
+                      style={{ background: isEditingPost ? '#F59E0B' : 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px' }}
                     >
-                      <Edit size={18} color={isEditingPost ? 'white' : 'var(--text-secondary)'} />
+                      <Edit size={18} color={isEditingPost ? 'black' : '#F59E0B'} />
                     </button>
                     <button 
                       onClick={() => handleDeletePost(selectedPost._id)}
-                      style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', padding: '6px' }}
+                      style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', padding: '6px' }}
                     >
-                      <Trash2 size={18} color="#EF4444" />
+                      <Trash2 size={18} color="#F59E0B" />
                     </button>
                   </div>
                 )}
