@@ -218,7 +218,154 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
         )}
       </div>
 
-    </div>
+      {/* Post Modal */}
+      {selectedPost && (
+        <div 
+          onClick={() => setSelectedPost(null)} 
+          style={{ 
+            position: 'fixed', inset: 0, 
+            background: 'rgba(10, 15, 28, 0.8)', 
+            backdropFilter: 'blur(12px)', 
+            zIndex: 3000, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            padding: '20px',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+        >
+          <motion.div 
+            onClick={e => e.stopPropagation()}
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            style={{ 
+              width: '100%', 
+              maxWidth: '500px', 
+              maxHeight: '85vh', 
+              background: 'var(--bg-dark)', 
+              borderRadius: '32px', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              overflow: 'hidden', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+              position: 'relative'
+            }}
+          >
+            {/* Close Button */}
+            <div 
+              onClick={() => setSelectedPost(null)}
+              style={{ 
+                position: 'absolute', top: '12px', left: '12px', 
+                background: 'rgba(255,255,255,0.1)', 
+                borderRadius: '50%', padding: '6px', 
+                cursor: 'pointer', zIndex: 10,
+                transition: 'all 0.2s'
+              }}
+            >
+              <X size={16} color="white" />
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '80px' }} className="hide-scrollbar">
+              <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <img src={selectedPost.user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--primary-blue)', objectFit: 'cover' }} />
+                  <div>
+                    <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'white' }}>{selectedPost.user?.fullName || 'User'}</h4>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(selectedPost.createdAt).toLocaleDateString('ar-EG')}</span>
+                  </div>
+                </div>
+
+                {selectedPost.user?._id === user?._id && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <button 
+                      onClick={() => setIsEditingPost(!isEditingPost)}
+                      style={{ background: isEditingPost ? '#F59E0B' : 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px' }}
+                    >
+                      <Edit size={18} color={isEditingPost ? 'black' : '#F59E0B'} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeletePost(selectedPost._id)}
+                      style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', padding: '6px' }}
+                    >
+                      <Trash2 size={18} color="#F59E0B" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+            {isEditingPost ? (
+              <div style={{ padding: '0 16px 16px 16px' }}>
+                <textarea 
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'white', padding: '12px', minHeight: '100px', marginBottom: '12px', outline: 'none' }}
+                />
+                <button 
+                  onClick={handleUpdatePost}
+                  style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '10px', fontWeight: 'bold' }}
+                >
+                  حفظ التعديلات
+                </button>
+              </div>
+            ) : (
+              selectedPost.text && <p style={{ padding: '0 16px', fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '16px', color: 'white' }}>{selectedPost.text}</p>
+            )}
+
+            {selectedPost.mediaUrls?.[0] && <img src={getImageUrl(selectedPost.mediaUrls[0])} style={{ width: '100%', maxHeight: '500px', objectFit: 'contain', background: '#000' }} />}
+
+            <div style={{ display: 'flex', justifyContent: 'space-around', padding: '16px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <motion.div 
+                whileTap={{ scale: 1.5 }}
+                onClick={() => { if(selectedPost._id) { likePost(selectedPost._id); } }} 
+                style={{ display: 'flex', gap: '8px', alignItems: 'center', color: selectedPost.likes?.includes(user?._id) ? '#EF4444' : 'var(--text-primary)', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                <Heart size={24} color={selectedPost.likes?.includes(user?._id) ? "#EF4444" : "var(--text-primary)"} fill={selectedPost.likes?.includes(user?._id) ? "#EF4444" : "transparent"} /> {selectedPost.likes?.length || 0}
+              </motion.div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <MessageCircle size={24} /> {selectedPost.commentsCount || selectedPost.comments?.length || 0} تعليق
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <Repeat size={24} /> إعادة نشر
+              </div>
+            </div>
+
+            <div style={{ padding: '24px 16px', flex: 1 }}>
+              <h4 style={{ fontWeight: 'bold', marginBottom: '24px', color: 'var(--text-primary)' }}>التعليقات</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {(selectedPost.comments || []).map((c, i) => (
+                  <div key={c._id || i} style={{ display: 'flex', gap: '12px', animation: 'fadeInUp 0.3s ease-out' }}>
+                    <img src={c.user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ background: 'var(--glass)', padding: '12px 16px', borderRadius: '20px', borderTopRightRadius: '4px', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>{c.user?.fullName}</span>
+                        <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', opacity: 0.9, lineHeight: '1.4' }}>{c.text}</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '16px', padding: '4px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+                        <span style={{ cursor: 'pointer' }}>إعجاب</span>
+                        <span style={{ cursor: 'pointer' }}>رد</span>
+                        <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ padding: '16px', background: 'var(--nav-bg)', position: 'sticky', bottom: 0, borderTop: '1px solid var(--glass-border)' }}>
+              <div style={{ display: 'flex', background: 'var(--glass)', borderRadius: '24px', padding: '8px 16px', alignItems: 'center', border: '1px solid var(--glass-border)' }}>
+                <input 
+                  style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', padding: '8px', outline: 'none', fontSize: '1rem' }} 
+                  placeholder="أضف تعليقاً..." 
+                  value={commentText}
+                  onChange={e => setCommentText(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && handleAddComment()}
+                />
+                <Send onClick={handleAddComment} size={24} color={commentText ? "var(--primary-blue)" : "var(--text-secondary)"} style={{ cursor: 'pointer', transition: 'color 0.2s' }} />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {viewingStory && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'black', zIndex: 300, display: 'flex', flexDirection: 'column' }}>

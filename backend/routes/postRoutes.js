@@ -57,16 +57,9 @@ router.put('/:id', protect, async (req, res) => {
 router.delete('/:id', protect, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-    
-    if (!post) {
-      return res.status(404).json({ message: 'المنشور غير موجود' });
-    }
-
-    if (post.user.toString() !== req.user._id.toString() && !isAdmin) {
+    if (!post || post.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'غير مسموح' });
     }
-
     await Post.findByIdAndDelete(req.params.id);
     req.io.to(req.user.batchId).emit('post_deleted', req.params.id);
     res.json({ message: 'تم الحذف' });
