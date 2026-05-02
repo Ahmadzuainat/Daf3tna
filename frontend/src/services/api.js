@@ -11,6 +11,11 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    // Ensure URL doesn't start with / to prevent it from overriding baseURL in some environments
+    if (config.url && config.url.startsWith('/')) {
+      config.url = config.url.substring(1);
+    }
+
     // Read token from zustand persist storage
     try {
       const stored = localStorage.getItem('daf3tna-auth');

@@ -88,14 +88,15 @@ export const useAppStore = create((set, get) => ({
     }));
   },
 
-  addPost: async (content, mediaUrl) => {
+  addPost: async (text, mediaUrl) => {
     try {
       const res = await api.post('/posts', {
-        content: content || '',
+        text: text || '',
         mediaUrls: mediaUrl ? [mediaUrl] : []
       });
-      set(state => ({ posts: [res.data, ...state.posts] }));
-      return res.data;
+      const newPost = res.data.data || res.data;
+      set(state => ({ posts: [newPost, ...state.posts] }));
+      return newPost;
     } catch (err) {
       console.error('addPost:', err);
       throw err;
