@@ -139,21 +139,29 @@ const UsersPage = () => {
 
                     {authUser?.role?.toLowerCase() === 'superadmin' && (
                       <button 
-                        onClick={async () => {
-                          if (!window.confirm(`هل أنت متأكد من حذف حساب ${u.fullName} نهائياً من قاعدة البيانات؟ لا يمكن التراجع عن هذا الإجراء!`)) return;
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          console.log('🗑️ Attempting to delete user:', u._id);
+                          if (!window.confirm(`هل أنت متأكد من حذف حساب ${u.fullName} نهائياً؟ لا يمكن التراجع عن هذا الإجراء!`)) return;
+                          
                           try {
-                            await api.delete(`/admin/users/${u._id}`);
+                            console.log('📡 Sending delete request for:', u._id);
+                            const res = await api.delete(`admin/users/${u._id}`);
+                            console.log('✅ Delete response:', res.data);
                             toast.success('تم حذف المستخدم نهائياً');
                             fetchUsers();
                           } catch (err) {
-                            console.error('Delete error:', err);
-                            toast.error('فشل الحذف');
+                            console.error('❌ Delete error:', err.response?.data || err.message);
+                            toast.error(err.response?.data?.message || 'فشل الحذف');
                           }
                         }}
                         style={{ 
                           padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer',
                           background: 'rgba(239, 68, 68, 0.2)',
-                          color: '#ef4444'
+                          color: '#ef4444',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
                         }}
                         title="حذف الحساب نهائياً"
                       >
