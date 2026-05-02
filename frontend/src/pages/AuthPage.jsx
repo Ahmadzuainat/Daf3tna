@@ -4,7 +4,12 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Shield, Search, ArrowLeft, GraduationCap, Mail, Lock, User as UserIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API_BASE_URL = 'https://daf3tna.onrender.com';
+const getRawBaseURL = () => {
+  const url = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';
+  return url.endsWith('/api') ? url.replace('/api', '') : url;
+};
+
+const API_BASE_URL = getRawBaseURL();
 
 const AuthPage = () => {
   const [step, setStep] = useState(1); // 1: Login/Register, 2: Select Batch
