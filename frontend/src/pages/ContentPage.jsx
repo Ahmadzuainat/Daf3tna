@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Trash2, Eye, EyeOff, Star, AlertCircle, FileText, Film } from 'lucide-react';
+import { Layers, Trash2, Eye, EyeOff, Star, AlertCircle, FileText, Film, MoreVertical, MessageSquare } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'sonner';
 
