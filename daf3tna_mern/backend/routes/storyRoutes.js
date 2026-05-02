@@ -8,7 +8,10 @@ const router = express.Router();
 // Get active stories (Optimized)
 router.get('/', protect, async (req, res) => {
   try {
-    const stories = await Story.find({ batchId: req.user.batchId })
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
+    
+    const stories = await Story.find(query)
       .populate('user', 'fullName avatarUrl username')
       .sort('-createdAt')
       .lean();

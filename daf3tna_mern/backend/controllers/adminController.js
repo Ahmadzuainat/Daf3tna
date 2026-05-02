@@ -131,7 +131,52 @@ export const updateSiteSettings = asyncHandler(async (req, res) => {
     ipAddress: req.ip
   });
 
+  // If site shutdown is triggered, we can emit a signal
+  if (req.body.maintenanceType === 'lockdown' || req.body.maintenanceMode) {
+    req.io.emit('site:statusUpdate', settings);
+  }
+
   res.json({ success: true, data: settings });
+});
+
+// --- TASK 5: GLOBAL ALERT ---
+export const broadcastAlert = asyncHandler(async (req, res) => {
+  const { message, type = 'emergency' } = req.body;
+  if (!message) return res.status(400).json({ message: 'Message is required' });
+
+  req.io.emit('global:alert', { message, type, sender: req.user.fullName });
+
+  await AdminLog.create({
+    admin: req.user._id,
+    action: 'BROADCAST_ALERT',
+    details: { message, type },
+    ipAddress: req.ip
+  });
+
+  res.json({ success: true, message: 'Alert broadcasted to all users' });
+});
+
+// --- TASK 6: ACTIVE ONLINE USERS ---
+export const getOnlineUsers = asyncHandler(async (req, res) => {
+  const onlineUsers = await User.find({ isOnline: true })
+    .select('fullName username email avatarUrl lastActivityDate role')
+    .sort('-lastActivityDate');
+  
+  res.json({ success: true, data: onlineUsers });
+});
+
+// --- TASK 8: FORCE LOGOUT ALL ---
+export const logoutEveryone = asyncHandler(async (req, res) => {
+  // Emit a force logout event to everyone except the admin
+  req.io.emit('force:logout', { reason: 'إجراء إداري: تم تسجيل خروج جميع المستخدمين' });
+
+  await AdminLog.create({
+    admin: req.user._id,
+    action: 'FORCE_LOGOUT_ALL',
+    ipAddress: req.ip
+  });
+
+  res.json({ success: true, message: 'Command sent to logout all users' });
 });
 
 // --- PHASE 13: SECURITY (IP BANS) ---

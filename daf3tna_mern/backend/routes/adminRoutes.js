@@ -9,7 +9,10 @@ import {
   updateSiteSettings,
   banIP,
   getBans,
-  getAdminLogs
+  getAdminLogs,
+  getOnlineUsers,
+  broadcastAlert,
+  logoutEveryone
 } from '../controllers/adminController.js';
 import { protect, moderatorOnly, adminOnly, superAdminOnly } from '../middleware/authMiddleware.js';
 
@@ -25,13 +28,16 @@ router.put('/reports/:reportId', moderatorOnly, resolveReport);
 // Admin+
 router.get('/stats', adminOnly, getStats);
 router.get('/users', adminOnly, getUsers);
+router.get('/users/online', adminOnly, getOnlineUsers); // TASK 6
 router.put('/users/:userId/moderate', adminOnly, moderateUser);
 router.get('/settings', adminOnly, getSiteSettings);
 router.put('/settings', adminOnly, updateSiteSettings);
+router.post('/broadcast-alert', adminOnly, broadcastAlert); // TASK 5
 
 // SuperAdmin Only
 router.post('/security/ban-ip', superAdminOnly, banIP);
 router.get('/security/bans', superAdminOnly, getBans);
 router.get('/logs', superAdminOnly, getAdminLogs);
+router.post('/force-logout-all', superAdminOnly, logoutEveryone); // TASK 8
 
 export default router;

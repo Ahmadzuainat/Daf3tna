@@ -11,7 +11,7 @@ const authLimiter = rateLimit({
   message: { message: 'محاولات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة' }
 });
 
-router.post('/register', authLimiter, restrictFeature('registration'), register);
+router.post('/register', authLimiter, restrictFeature('registrationEnabled'), register);
 router.post('/verify-otp', authLimiter, verifyOtp);
 router.post('/login', authLimiter, login);
 router.post('/forgot-password', authLimiter, forgotPassword);

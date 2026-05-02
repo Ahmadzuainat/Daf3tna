@@ -15,7 +15,9 @@ const router = express.Router();
 ============================================================ */
 router.get('/awards', protect, async (req, res) => {
   try {
-    const awards = await Award.find({ batchId: req.user.batchId })
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
+    const awards = await Award.find(query)
       .populate('user', 'fullName avatarUrl username')
       .sort({ createdAt: -1 });
     res.json(awards);
@@ -71,9 +73,9 @@ router.post('/awards/:id/vote', protect, async (req, res) => {
 ============================================================ */
 router.get('/quotes', protect, async (req, res) => {
   try {
-    const quotes = await Quote.find({ 
-      $or: [{ batchId: req.user.batchId }, { batchId: 'all' }] 
-    }).sort({ createdAt: -1 });
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { $or: [{ batchId: req.user.batchId }, { batchId: 'all' }] };
+    const quotes = await Quote.find(query).sort({ createdAt: -1 });
     res.json(quotes);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -113,8 +115,9 @@ router.delete('/quotes/:id', protect, async (req, res) => {
 ============================================================ */
 router.get('/confessions', protect, async (req, res) => {
   try {
-    // Select only safe fields — never expose the author
-    const confessions = await Confession.find({ batchId: req.user.batchId })
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
+    const confessions = await Confession.find(query)
       .select('text batchId createdAt')
       .sort({ createdAt: -1 });
     res.json(confessions);
@@ -158,7 +161,9 @@ router.delete('/confessions/:id', protect, async (req, res) => {
 ============================================================ */
 router.get('/panics', protect, async (req, res) => {
   try {
-    const panics = await Panic.find({ batchId: req.user.batchId, active: true })
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? { active: true } : { batchId: req.user.batchId, active: true };
+    const panics = await Panic.find(query)
       .populate('author', 'fullName avatarUrl username')
       .populate('replies.user', 'fullName avatarUrl username')
       .sort({ createdAt: -1 });
@@ -228,7 +233,9 @@ router.post('/panics/:id/reply', protect, async (req, res) => {
 ============================================================ */
 router.get('/notebooks', protect, async (req, res) => {
   try {
-    const notebooks = await Notebook.find({ batchId: req.user.batchId })
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
+    const notebooks = await Notebook.find(query)
       .populate('owner', 'fullName avatarUrl username major')
       .populate('messages.author', 'fullName avatarUrl username');
     res.json(notebooks);
@@ -363,7 +370,9 @@ router.put('/notebooks/:id/visibility', protect, async (req, res) => {
 ============================================================ */
 router.get('/instants', protect, async (req, res) => {
   try {
-    const instants = await Instant.find({ batchId: req.user.batchId })
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
+    const instants = await Instant.find(query)
       .populate('user', 'fullName avatarUrl username')
       .sort({ createdAt: -1 });
     res.json(instants);
@@ -449,13 +458,15 @@ router.delete('/instants/:id', protect, async (req, res) => {
 ============================================================ */
 router.get('/time-capsules', protect, async (req, res) => {
   try {
-    const capsules = await TimeCapsule.find({ 
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { 
       batchId: req.user.batchId,
       $or: [
-        { author: req.user._id }, // user's own capsules (always visible to them)
-        { isPublic: true, unlockDate: { $lte: new Date() } } // public ones that are unlocked
+        { author: req.user._id }, 
+        { isPublic: true, unlockDate: { $lte: new Date() } }
       ]
-    }).populate('author', 'fullName avatarUrl username');
+    };
+    const capsules = await TimeCapsule.find(query).populate('author', 'fullName avatarUrl username');
     res.json(capsules);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

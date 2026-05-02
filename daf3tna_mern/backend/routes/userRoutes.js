@@ -15,7 +15,10 @@ router.get('/me', protect, (req, res) => res.json(req.user));
 // Yearbook - Get all users in batch (Optimized)
 router.get('/batch', protect, async (req, res) => {
   try {
-    const users = await User.find({ batchId: req.user.batchId })
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
+    
+    const users = await User.find(query)
       .select('fullName username avatarUrl bio major followers following isPrivate')
       .sort({ fullName: 1 })
       .lean();
@@ -38,7 +41,8 @@ router.get('/:username', protect, getProfile);
 router.get('/search', protect, async (req, res) => {
   const { name, username } = req.query;
   try {
-    const query = { batchId: req.user.batchId };
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
     if (username) query.username = { $regex: `^${username}`, $options: 'i' }; // Partial match from start
     else if (name) query.fullName = { $regex: name, $options: 'i' };
     else return res.status(400).json({ message: 'يجب إدخال اسم أو يوزرنيم' });

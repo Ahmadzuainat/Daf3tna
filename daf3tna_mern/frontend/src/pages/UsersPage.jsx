@@ -2,17 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, Shield, UserX, UserCheck, Trash2, Edit } from 'lucide-react';
 import api from '../services/api';
 import { toast } from 'sonner';
+import { useAuthStore } from '../store/useAuthStore';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [showOnlyOnline, setShowOnlyOnline] = useState(false);
+  const { user: authUser } = useAuthStore();
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/admin/users?search=${search}&page=${page}`);
+      const endpoint = showOnlyOnline ? '/admin/users/online' : `/admin/users?search=${search}&page=${page}`;
+      const { data } = await api.get(endpoint);
       setUsers(data.data);
     } catch (err) {
       toast.error('فشل في جلب المستخدمين');
@@ -26,15 +30,15 @@ const UsersPage = () => {
       fetchUsers();
     }, 500);
     return () => clearTimeout(delayDebounce);
-  }, [search, page]);
+  }, [search, page, showOnlyOnline]);
 
   const handleModerate = async (userId, action, value) => {
     try {
       await api.put(`/admin/users/${userId}/moderate`, { [action]: value });
-      toast.success('تم تحديث بيانات المستخدم');
+      toast.success('تم التحديث بنجاح');
       fetchUsers();
     } catch (err) {
-      toast.error('خطأ في العملية');
+      toast.error(err.response?.data?.message || 'خطأ في العملية');
     }
   };
 
@@ -42,8 +46,21 @@ const UsersPage = () => {
     <div className="fade-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'white' }}>إدارة المستخدمين</h1>
-          <p style={{ color: '#94a3b8' }}>التحكم في العضويات، الأدوار، وحظر الحسابات.</p>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'white' }}>إدارة المستخدمين 👥</h1>
+          <p style={{ color: '#94a3b8' }}>مراقبة النشاط والتحكم في صلاحيات العضويات.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            onClick={() => setShowOnlyOnline(!showOnlyOnline)}
+            style={{ 
+              background: showOnlyOnline ? '#10b981' : 'rgba(255,255,255,0.05)', 
+              color: showOnlyOnline ? 'black' : 'white', 
+              border: 'none', padding: '10px 20px', borderRadius: '12px', 
+              fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' 
+            }}
+          >
+            {showOnlyOnline ? 'عرض الكل' : 'المتصلون الآن'}
+          </button>
         </div>
       </div>
 
@@ -52,72 +69,68 @@ const UsersPage = () => {
           <Search size={20} color="#94a3b8" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
             type="text" 
-            placeholder="البحث بالاسم، البريد، أو التخصص..." 
+            placeholder="البحث بالاسم، اليوزر، أو الإيميل..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 48px 12px 16px', color: 'white', outline: 'none' }}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px 48px 14px 16px', color: 'white', outline: 'none' }}
           />
         </div>
-        <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 20px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Filter size={18} /> تصفية
-        </button>
       </div>
 
-      <div className="glass-card" style={{ overflow: 'hidden', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="glass-card" style={{ overflow: 'hidden', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(30, 41, 59, 0.4)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
           <thead>
             <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <th style={{ padding: '16px 24px', color: '#94a3b8', fontWeight: '500' }}>المستخدم</th>
-              <th style={{ padding: '16px 24px', color: '#94a3b8', fontWeight: '500' }}>البريد الإلكتروني</th>
-              <th style={{ padding: '16px 24px', color: '#94a3b8', fontWeight: '500' }}>الدور</th>
-              <th style={{ padding: '16px 24px', color: '#94a3b8', fontWeight: '500' }}>الحالة</th>
-              <th style={{ padding: '16px 24px', color: '#94a3b8', fontWeight: '500' }}>الإجراءات</th>
+              <th style={{ padding: '20px 24px', color: '#94a3b8', fontWeight: 'bold' }}>المستخدم</th>
+              <th style={{ padding: '20px 24px', color: '#94a3b8', fontWeight: 'bold' }}>الدور / الرتبة</th>
+              <th style={{ padding: '20px 24px', color: '#94a3b8', fontWeight: 'bold' }}>آخر نشاط</th>
+              <th style={{ padding: '20px 24px', color: '#94a3b8', fontWeight: 'bold' }}>الإجراءات</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
               <tr key={u._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }}>
                 <td style={{ padding: '16px 24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.fullName}&background=random`} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ position: 'relative' }}>
+                      <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.fullName}`} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.05)' }} />
+                      {u.isOnline && (
+                        <div style={{ position: 'absolute', bottom: '2px', left: '2px', width: '12px', height: '12px', background: '#10b981', borderRadius: '50%', border: '2px solid #0f172a', boxShadow: '0 0 10px #10b981' }} />
+                      )}
+                    </div>
                     <div>
                       <div style={{ fontWeight: 'bold', color: 'white' }}>{u.fullName}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>@{u.username}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{u.email}</div>
                     </div>
                   </div>
                 </td>
-                <td style={{ padding: '16px 24px', color: '#94a3b8' }}>{u.email}</td>
                 <td style={{ padding: '16px 24px' }}>
-                  <span style={{ 
-                    padding: '4px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold',
-                    background: u.role === 'admin' ? '#3b82f620' : (u.role === 'moderator' ? '#8b5cf620' : 'rgba(255,255,255,0.05)'),
-                    color: u.role === 'admin' ? '#3b82f6' : (u.role === 'moderator' ? '#8b5cf6' : '#94a3b8')
-                  }}>
-                    {u.role}
-                  </span>
+                  <select 
+                    value={u.role}
+                    disabled={u.role === 'superadmin' && authUser.email !== 'ahmaded252a@gmail.com'}
+                    onChange={(e) => handleModerate(u._id, 'role', e.target.value)}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#3b82f6', borderRadius: '8px', padding: '6px 12px', outline: 'none' }}
+                  >
+                    <option value="user">User</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="admin">Admin</option>
+                    {authUser.role === 'superadmin' && <option value="superadmin">Superadmin</option>}
+                  </select>
                 </td>
-                <td style={{ padding: '16px 24px' }}>
-                  <span style={{ 
-                    padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem',
-                    background: u.status === 'active' ? '#10b98120' : '#ef444420',
-                    color: u.status === 'active' ? '#10b981' : '#ef4444'
-                  }}>
-                    {u.status === 'active' ? 'نشط' : 'محظور'}
-                  </span>
+                <td style={{ padding: '16px 24px', color: '#94a3b8', fontSize: '0.9rem' }}>
+                  {u.isOnline ? <span style={{ color: '#10b981', fontWeight: 'bold' }}>متصل الآن</span> : new Date(u.lastSeen || u.updatedAt).toLocaleString('ar-EG')}
                 </td>
                 <td style={{ padding: '16px 24px' }}>
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    {u.status === 'active' ? (
-                      <button onClick={() => handleModerate(u._id, 'status', 'banned')} title="حظر" style={{ padding: '8px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
-                        <UserX size={18} />
-                      </button>
-                    ) : (
-                      <button onClick={() => handleModerate(u._id, 'status', 'active')} title="إلغاء الحظر" style={{ padding: '8px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: 'none', cursor: 'pointer' }}>
-                        <UserCheck size={18} />
-                      </button>
-                    )}
-                    <button onClick={() => handleModerate(u._id, 'role', u.role === 'user' ? 'moderator' : 'user')} title="تغيير الرتبة" style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', border: 'none', cursor: 'pointer' }}>
-                      <Shield size={18} />
+                    <button 
+                      onClick={() => handleModerate(u._id, 'status', u.status === 'active' ? 'banned' : 'active')} 
+                      style={{ 
+                        padding: '10px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                        background: u.status === 'active' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                        color: u.status === 'active' ? '#ef4444' : '#10b981'
+                      }}
+                    >
+                      {u.status === 'active' ? <UserX size={20} /> : <UserCheck size={20} />}
                     </button>
                   </div>
                 </td>
@@ -125,7 +138,7 @@ const UsersPage = () => {
             ))}
           </tbody>
         </table>
-        {users.length === 0 && <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>لا يوجد مستخدمين لعرضهم.</div>}
+        {users.length === 0 && <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>لا يوجد بيانات لعرضها حالياً.</div>}
       </div>
     </div>
   );

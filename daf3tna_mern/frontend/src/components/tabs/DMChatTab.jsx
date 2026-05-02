@@ -6,7 +6,7 @@ import api from '../../services/api';
 
 const DMChatTab = ({ user: chat, onBack }) => {
   const { user: authUser } = useAuthStore();
-  const { socket } = useAppStore();
+  const { socket, sendChatMessage, markChatAsRead } = useAppStore();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
@@ -14,14 +14,17 @@ const DMChatTab = ({ user: chat, onBack }) => {
 
   useEffect(() => {
     if (chat._id) {
+      // 1. Fetch persistent history
       api.get(`/chats/${chat._id}/messages`).then(res => setMessages(res.data));
+      
+      // 2. Join dedicated DM room
       if (socket) {
-        socket.emit('join_room', chat._id);
-        // Mark as read
-        api.put(`/chats/${chat._id}/read`);
+        socket.emit('dm:join', chat._id);
+        markChatAsRead(chat._id);
       }
     }
 
+    // 3. Listen for live DM events
     if (socket) {
       const handleMsg = (msg) => {
         if (msg.chatId === chat._id) {
@@ -29,21 +32,37 @@ const DMChatTab = ({ user: chat, onBack }) => {
             if (prev.find(m => m._id === msg._id)) return prev;
             return [...prev, msg];
           });
-          api.put(`/chats/${chat._id}/read`);
+          markChatAsRead(chat._id);
         }
       };
-      socket.on('receive_message', handleMsg);
-      return () => socket.off('receive_message', handleMsg);
+      
+      socket.on('dm:messageReceived', handleMsg);
+      return () => socket.off('dm:messageReceived', handleMsg);
     }
   }, [chat._id, socket, authUser._id]);
 
-  const sendMessage = (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !socket) return;
-    const msgData = { chatId: chat._id, content: newMessage, sender: authUser._id };
-    socket.emit('send_message', msgData);
-    setMessages(prev => [...prev, { ...msgData, sender: authUser, createdAt: new Date() }]);
-    setNewMessage('');
+    
+    try {
+      const content = newMessage;
+      setNewMessage('');
+
+      // 1. Save to DB and get populated object
+      const savedMsg = await sendChatMessage(chat._id, content);
+
+      // 2. Broadcast via Socket
+      socket.emit('dm:newMessage', {
+        ...savedMsg,
+        receiver: otherUser._id
+      });
+
+      // 3. Update local list
+      setMessages(prev => [...prev, savedMsg]);
+    } catch (err) {
+      console.error("DM Send error:", err);
+    }
   };
 
   return (

@@ -13,12 +13,15 @@ import SecurityPage from './pages/SecurityPage';
 import SiteControlPage from './pages/SiteControlPage';
 import ContentPage from './pages/ContentPage';
 import LogsPage from './pages/LogsPage';
+import AdminHubsPage from './pages/AdminHubsPage';
 
 // Layouts & Guards
 import AdminLayout from './components/AdminLayout';
 import AdminRoute from './components/AdminRoute';
 import { useAuthStore } from './store/useAuthStore';
+import { useAppStore } from './store/useAppStore';
 import api from './services/api';
+import GlobalAlertBanner from './components/common/GlobalAlertBanner';
 
 // Styles
 import './styles/index.css';
@@ -76,6 +79,7 @@ function App() {
 
   return (
     <Router>
+      <GlobalAlertBanner />
       <Toaster richColors position="top-right" closeButton />
       <Routes>
         <Route path="/" element={isLoggedIn ? <Navigate to="/home" replace /> : <AuthPage />} />
@@ -87,6 +91,7 @@ function App() {
           <Route path="analytics" element={<AdminRoute level="admin"><AdminDashboard /></AdminRoute>} />
           <Route path="users" element={<AdminRoute level="admin"><UsersPage /></AdminRoute>} />
           <Route path="reports" element={<ReportsPage />} />
+          <Route path="hubs" element={<AdminHubsPage />} />
           <Route path="content" element={<ContentPage />} />
           <Route path="security" element={<AdminRoute level="superadmin"><SecurityPage /></AdminRoute>} />
           <Route path="site" element={<AdminRoute level="admin"><SiteControlPage /></AdminRoute>} />

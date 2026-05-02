@@ -28,7 +28,8 @@ router.post('/', protect, async (req, res) => {
     // Verify the other user is in the same batch
     const otherUser = await User.findById(userId).select('batchId fullName');
     if (!otherUser) return res.status(404).json({ message: 'المستخدم غير موجود' });
-    if (otherUser.batchId !== req.user.batchId) {
+    const isSuperAdmin = req.user.role === 'superadmin';
+    if (!isSuperAdmin && otherUser.batchId !== req.user.batchId) {
       return res.status(403).json({ message: 'لا يمكن مراسلة طلاب من دفعات أخرى' });
     }
 
@@ -70,9 +71,8 @@ router.get('/:id/messages', protect, async (req, res) => {
 // Mark messages in a chat as read
 router.put('/:id/read', protect, async (req, res) => {
   try {
-    const chat = await Chat.findById(req.params.id);
+    const chat = await Chat.findOne({ _id: req.params.id, participants: req.user._id });
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
-    if (!chat.participants.includes(req.user._id)) return res.status(403).json({ message: 'Access denied' });
 
     // Reset unreadCount for current user
     chat.unreadCount.set(req.user._id.toString(), 0);
@@ -85,6 +85,45 @@ router.put('/:id/read', protect, async (req, res) => {
     );
 
     res.json({ message: 'Chat marked as read' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// SEND a message to a chat
+router.post('/:id/messages', protect, async (req, res) => {
+  const { content } = req.body;
+  if (!content?.trim()) return res.status(400).json({ message: 'Content is required' });
+
+  try {
+    // 1. Verify chat and participants
+    const chat = await Chat.findOne({ _id: req.params.id, participants: req.user._id });
+    if (!chat) return res.status(403).json({ message: 'Access denied' });
+
+    // 2. Create message
+    const message = new Message({
+      sender: req.user._id,
+      content,
+      chatId: req.params.id,
+      isRead: false
+    });
+    await message.save();
+
+    // 3. Update Chat metadata
+    chat.lastMessage = message._id;
+    
+    // Increment unread count for other participants
+    chat.participants.forEach(p => {
+      if (p.toString() !== req.user._id.toString()) {
+        const currentCount = chat.unreadCount.get(p.toString()) || 0;
+        chat.unreadCount.set(p.toString(), currentCount + 1);
+      }
+    });
+
+    await chat.save();
+
+    const populatedMessage = await message.populate('sender', 'fullName avatarUrl username');
+    res.status(201).json(populatedMessage);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

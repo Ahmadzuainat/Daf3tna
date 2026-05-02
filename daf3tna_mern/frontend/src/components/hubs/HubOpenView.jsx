@@ -12,26 +12,29 @@ const HubOpenView = ({ hub, onBack }) => {
   const [newMessage, setNewMessage] = useState('');
   const [activeChannel, setActiveChannel] = useState(hub.textChannels?.[0]?.name || 'عام');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (!hub._id || !activeChannel) return;
     
-    // Join room
-    const room = `${hub._id}-${activeChannel}`;
+    setLoading(true);
+    // 1. Join Socket Room
     if (socket) {
-      socket.emit('join_room', room);
+      socket.emit('hub:join', { hubId: hub._id, channelId: activeChannel });
     }
 
-    // Fetch messages
-    api.get(`/hubs/${hub._id}/channels/${activeChannel}/messages`)
+    // 2. Fetch Initial Messages from DB
+    api.get(`/hubs/${hub._id}/messages/${activeChannel}`)
       .then(res => {
         if (Array.isArray(res.data)) setMessages(res.data);
       })
-      .catch(err => console.error("Fetch error:", err));
+      .catch(err => console.error("Fetch error:", err))
+      .finally(() => setLoading(false));
 
+    // 3. Listen for Live Messages
     const handleNewMsg = (msg) => {
-      if (String(msg.channelName) === String(activeChannel) && String(msg.hubId) === String(hub._id)) {
+      if (msg.channelId === activeChannel && msg.hubId === hub._id) {
         setMessages(prev => {
           if (prev.find(m => m._id === msg._id)) return prev;
           return [...prev, msg];
@@ -39,51 +42,55 @@ const HubOpenView = ({ hub, onBack }) => {
       }
     };
 
+    const handleTypingUpdate = ({ user: typingUser, isTyping }) => {
+      // Local state for typing could be managed here if needed
+    };
+
     if (socket) {
-      socket.on('receive_message', handleNewMsg);
+      socket.on('hub:messageReceived', handleNewMsg);
+      socket.on('hub:typingUpdate', handleTypingUpdate);
     }
     
     return () => {
        if (socket) {
-         socket.off('receive_message', handleNewMsg);
+         socket.emit('hub:leave', { hubId: hub._id, channelId: activeChannel });
+         socket.off('hub:messageReceived', handleNewMsg);
+         socket.off('hub:typingUpdate', handleTypingUpdate);
        }
     };
-  }, [hub._id, activeChannel, socket, user]);
+  }, [hub._id, activeChannel, socket]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const [voiceCall, setVoiceCall] = useState(null);
-
-  const handleJoinVoice = (ch) => {
-     const chName = getTextChannelName(ch);
-     setVoiceCall({ channelName: chName, participants: [user], isMicOn: true, isCamOn: false });
-  };
-
-  const { typingStatus } = useAppStore(); 
-  const typingRoom = `${hub._id}-${activeChannel}`;
-  const typingData = typingStatus[typingRoom];
-
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
     if (!socket) return;
-    socket.emit('typing', { room: typingRoom, userId: user._id, fullName: user.fullName });
-    
-    if (window.typingTimeout) clearTimeout(window.typingTimeout);
-    window.typingTimeout = setTimeout(() => {
-      socket.emit('stop_typing', { room: typingRoom });
-    }, 2000);
+    socket.emit('hub:typing', { hubId: hub._id, channelId: activeChannel, user });
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!newMessage.trim()) return;
-    if (!socket) return;
-    const msgData = { content: newMessage, sender: user._id, hubId: hub._id, channelName: activeChannel };
-    socket.emit('send_message', msgData);
-    socket.emit('stop_typing', { room: typingRoom });
-    setNewMessage('');
-    setMessages(prev => [...prev, { ...msgData, sender: user, createdAt: new Date() }]);
+    
+    try {
+      // 1. Save to Database
+      const res = await api.post(`/hubs/${hub._id}/messages`, {
+        channelId: activeChannel,
+        text: newMessage
+      });
+
+      // 2. Broadcast via Socket
+      if (socket) {
+        socket.emit('hub:newMessage', res.data);
+      }
+
+      // 3. Update Local UI
+      setMessages(prev => [...prev, res.data]);
+      setNewMessage('');
+    } catch (err) {
+      console.error("Send error:", err);
+    }
   };
 
   if (voiceCall) {

@@ -8,11 +8,12 @@ import { uploadToCloudinary } from '../middleware/uploadMiddleware.js';
 export const getFeed = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const { user } = req;
-  const { batchId } = user;
+  const isSuperAdmin = user.role === 'superadmin';
+  const query = isSuperAdmin ? {} : { batchId: user.batchId };
 
   // Filter posts from private accounts that the user doesn't follow
   // Exception: My own posts
-  const posts = await Post.find({ batchId })
+  const posts = await Post.find(query)
     .populate('user', 'fullName username avatarUrl isPrivate followers')
     .sort('-createdAt')
     .skip((page - 1) * limit)
@@ -26,7 +27,7 @@ export const getFeed = asyncHandler(async (req, res) => {
     return (post.user.followers || []).some(f => f.toString() === user._id.toString());
   });
 
-  const total = await Post.countDocuments({ batchId });
+  const total = await Post.countDocuments(query);
 
   res.json({
     success: true,

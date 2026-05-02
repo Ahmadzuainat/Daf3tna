@@ -1,8 +1,10 @@
 import express from 'express';
+// Heartbeat restart trigger
 import User from './models/User.js';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import morgan from 'morgan';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
@@ -27,6 +29,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 dotenv.config();
 
 const app = express();
+app.use(morgan('dev'));
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
@@ -70,31 +73,89 @@ app.use((err, req, res, next) => {
 
 // --- SOCKET LOGIC ---
 io.on('connection', (socket) => {
+  // USER INITIAL SETUP
   socket.on('setup', async (userData) => {
     if (!userData?._id) return;
+    const isSuperAdmin = userData.role === 'superadmin';
+    
     socket.join(userData._id);
     socket.join(userData.batchId);
+    if (isSuperAdmin) socket.join('global_admin');
+
     socket.userId = userData._id;
     socket.batchId = userData.batchId;
+    socket.role = userData.role;
 
     await User.findByIdAndUpdate(userData._id, { isOnline: true });
     
-    // Send list of online users in this batch
-    const onlineUsers = await User.find({ batchId: userData.batchId, isOnline: true })
+    // Broadcast Presence
+    // 1. Update Batch Room
+    const batchOnline = await User.find({ batchId: userData.batchId, isOnline: true })
       .select('fullName avatarUrl username');
-    io.to(userData.batchId).emit('online_users_update', onlineUsers);
+    io.to(userData.batchId).emit('online_users_update', batchOnline);
 
-    console.log(`👤 User connected: ${userData.fullName}`);
+    // 2. If SuperAdmin or needed by SuperAdmin, update global room
+    const globalOnline = await User.find({ isOnline: true })
+      .select('fullName avatarUrl username role batchId');
+    io.to('global_admin').emit('online_users_update', globalOnline);
+
+    console.log(`👤 User connected: ${userData.fullName} (${userData.role})`);
   });
-  
-  socket.on('join_room', (room) => socket.join(room));
+
+  // HUBS & CHANNELS ROOMS
+  socket.on('hub:join', ({ hubId, channelId }) => {
+    const room = `hub_${hubId}_ch_${channelId}`;
+    socket.join(room);
+    console.log(`📡 User joined hub room: ${room}`);
+  });
+
+  socket.on('hub:leave', ({ hubId, channelId }) => {
+    socket.leave(`hub_${hubId}_ch_${channelId}`);
+  });
+
+  socket.on('hub:newMessage', (message) => {
+    const room = `hub_${message.hubId}_ch_${message.channelId}`;
+    socket.to(room).emit('hub:messageReceived', message);
+  });
+
+  socket.on('hub:typing', ({ hubId, channelId, user }) => {
+    const room = `hub_${hubId}_ch_${channelId}`;
+    socket.to(room).emit('hub:typingUpdate', { user, isTyping: true });
+  });
+
+  // PRIVATE MESSAGING (DMs)
+  socket.on('dm:join', (conversationId) => {
+    socket.join(conversationId);
+    console.log(`💬 User joined DM room: ${conversationId}`);
+  });
+
+  socket.on('dm:newMessage', (message) => {
+    // Emit to the conversation room
+    socket.to(message.conversationId).emit('dm:messageReceived', message);
+    // Also emit a notification to the specific receiver's personal room
+    socket.to(message.receiver).emit('dm:newNotification', message);
+  });
+
+  // GLOBAL EMERGENCY ALERT (Superadmin only)
+  socket.on('admin:broadcastAlert', (alertData) => {
+    // Only trust if sender has high role (validation can be added)
+    io.emit('global:alert', alertData);
+  });
 
   socket.on('disconnect', async () => {
     if (socket.userId) {
       await User.findByIdAndUpdate(socket.userId, { isOnline: false, lastSeen: Date.now() });
-      const onlineUsers = await User.find({ batchId: socket.batchId, isOnline: true })
+      
+      // Update Batch Room
+      const batchOnline = await User.find({ batchId: socket.batchId, isOnline: true })
         .select('fullName avatarUrl username');
-      io.to(socket.batchId).emit('online_users_update', onlineUsers);
+      io.to(socket.batchId).emit('online_users_update', batchOnline);
+
+      // Update Global Admin Room
+      const globalOnline = await User.find({ isOnline: true })
+        .select('fullName avatarUrl username role batchId');
+      io.to('global_admin').emit('online_users_update', globalOnline);
+
       console.log(`👤 User disconnected: ${socket.userId}`);
     }
   });

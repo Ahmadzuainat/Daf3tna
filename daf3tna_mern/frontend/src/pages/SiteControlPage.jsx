@@ -7,6 +7,7 @@ const SiteControlPage = () => {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   const fetchSettings = async () => {
     try {
@@ -27,7 +28,7 @@ const SiteControlPage = () => {
     setSaving(true);
     try {
       await api.put('/admin/settings', settings);
-      toast.success('تم حفظ التغييرات بنجاح');
+      toast.success('تم حفظ الإعدادات بنجاح');
     } catch (err) {
       toast.error('خطأ في حفظ الإعدادات');
     } finally {
@@ -35,101 +36,135 @@ const SiteControlPage = () => {
     }
   };
 
+  const handleBroadcast = async () => {
+    if (!alertMessage.trim()) return toast.error('أدخل رسالة التنبيه');
+    try {
+      await api.post('/admin/broadcast-alert', { message: alertMessage, type: 'emergency' });
+      toast.success('تم بث التنبيه لجميع المستخدمين');
+      setAlertMessage('');
+    } catch (err) {
+      toast.error('فشل بث التنبيه');
+    }
+  };
+
+  const handleForceLogout = async () => {
+    if (!window.confirm('هل أنت متأكد؟ سيتم طرد جميع المستخدمين من الموقع فوراً!')) return;
+    try {
+      await api.post('/admin/force-logout-all');
+      toast.success('تم إرسال أمر تسجيل الخروج للجميع');
+    } catch (err) {
+      toast.error('فشل العملية');
+    }
+  };
+
   const toggle = (key) => setSettings({ ...settings, [key]: !settings[key] });
 
-  if (loading) return <div style={{ color: 'white' }}>جاري التحميل...</div>;
+  if (loading) return <div style={{ color: 'white', padding: '40px', textAlign: 'center' }}>جاري جلب لوحة القيادة...</div>;
 
   return (
-    <div className="fade-in" style={{ maxWidth: '800px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+    <div className="fade-in" style={{ maxWidth: '1000px', paddingBottom: '60px' }}>
+      {/* Header Area */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', background: 'rgba(30, 41, 59, 0.4)', padding: '32px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.05)' }}>
         <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'white' }}>التحكم في النظام</h1>
-          <p style={{ color: '#94a3b8' }}>إدارة وضع الصيانة، صلاحيات التسجيل، والميزات العالمية.</p>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: 'white', letterSpacing: '-1px' }}>غرفة العمليات 📡</h1>
+          <p style={{ color: '#94a3b8', marginTop: '4px' }}>تحكم كامل في مفاصل منصة دفعتنا.</p>
         </div>
-        <button onClick={handleSave} disabled={saving} style={{ background: 'var(--primary-blue)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', opacity: saving ? 0.7 : 1 }}>
-          <Save size={18} /> {saving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+           <button onClick={handleForceLogout} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 20px', borderRadius: '16px', cursor: 'pointer', fontWeight: 'bold' }}>
+              طرد الجميع
+           </button>
+           <button onClick={handleSave} disabled={saving} style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', padding: '12px 28px', borderRadius: '16px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 10px 20px rgba(37, 99, 235, 0.2)' }}>
+              {saving ? 'جاري الحفظ...' : 'تحديث النظام'}
+           </button>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
         
-        {/* Maintenance Section */}
-        <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(239, 68, 68, 0.2)', background: settings?.maintenanceMode ? 'rgba(239, 68, 68, 0.05)' : 'rgba(30, 41, 59, 0.3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-               <Power color={settings?.maintenanceMode ? '#ef4444' : '#94a3b8'} />
-               <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white' }}>وضع الصيانة (Maintenance Mode)</h3>
-            </div>
-            <div onClick={() => toggle('maintenanceMode')} style={{ width: '50px', height: '26px', background: settings?.maintenanceMode ? '#ef4444' : '#333', borderRadius: '13px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s' }}>
-               <div style={{ width: '20px', height: '20px', background: 'white', borderRadius: '50%', position: 'absolute', top: '3px', right: settings?.maintenanceMode ? '27px' : '3px', transition: 'all 0.3s' }} />
-            </div>
+        {/* Maintenance & Emergency Section */}
+        <div className="glass-card" style={{ gridColumn: '1 / -1', padding: '32px', borderRadius: '32px', border: `1px solid ${settings?.maintenanceMode ? '#ef444444' : 'rgba(255,255,255,0.05)'}`, background: settings?.maintenanceMode ? 'rgba(239, 68, 68, 0.05)' : 'rgba(30, 41, 59, 0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ padding: '12px', background: settings?.maintenanceMode ? '#ef444422' : '#ffffff0a', borderRadius: '16px' }}>
+                   <Power size={24} color={settings?.maintenanceMode ? '#ef4444' : '#94a3b8'} />
+                </div>
+                <div>
+                   <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}>وضع الصيانة والحماية</h3>
+                   <p style={{ color: '#64748b', fontSize: '0.85rem' }}>التحكم في وصول المستخدمين العام للمنصة.</p>
+                </div>
+             </div>
+             <div onClick={() => toggle('maintenanceMode')} style={{ width: '60px', height: '32px', background: settings?.maintenanceMode ? '#ef4444' : '#1e293b', borderRadius: '16px', position: 'relative', cursor: 'pointer', transition: '0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ width: '24px', height: '24px', background: 'white', borderRadius: '50%', position: 'absolute', top: '3px', right: settings?.maintenanceMode ? '33px' : '3px', transition: '0.3s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+             </div>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.85rem', marginBottom: '8px' }}>نوع الصيانة:</label>
-              <select 
-                value={settings?.maintenanceType}
-                onChange={(e) => setSettings({...settings, maintenanceType: e.target.value})}
-                style={{ width: '100%', background: '#0a0f1c', border: '1px solid #333', borderRadius: '8px', padding: '10px', color: 'white' }}
-              >
-                <option value="soft">Soft (تنبيه فقط)</option>
-                <option value="read-only">Read Only (للقراءة فقط)</option>
-                <option value="lockdown">Lockdown (إغلاق كامل)</option>
-                <option value="emergency">Emergency (حالة طوارئ)</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.85rem', marginBottom: '8px' }}>رسالة الصيانة:</label>
-              <input 
-                type="text" 
-                value={settings?.maintenanceMessage}
-                onChange={(e) => setSettings({...settings, maintenanceMessage: e.target.value})}
-                style={{ width: '100%', background: '#0a0f1c', border: '1px solid #333', borderRadius: '8px', padding: '10px', color: 'white' }}
-              />
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+             <div>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.85rem', marginBottom: '10px' }}>المستوى الأمني:</label>
+                <select 
+                  value={settings?.maintenanceType}
+                  onChange={(e) => setSettings({...settings, maintenanceType: e.target.value})}
+                  style={{ width: '100%', background: '#0a0f1c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: 'white', outline: 'none' }}
+                >
+                  <option value="soft">Soft (إشعار صيانة فقط)</option>
+                  <option value="read-only">Read Only (تجميد العمليات)</option>
+                  <option value="lockdown">Lockdown (منع الدخول تماماً)</option>
+                  <option value="emergency">Emergency (إغلاق طارئ)</option>
+                </select>
+             </div>
+             <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.85rem', marginBottom: '10px' }}>الرسالة الموجهة للطلاب:</label>
+                <input 
+                  type="text" 
+                  value={settings?.maintenanceMessage}
+                  onChange={(e) => setSettings({...settings, maintenanceMessage: e.target.value})}
+                  placeholder="مثال: المنصة تحت الصيانة الدورية..."
+                  style={{ width: '100%', background: '#0a0f1c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: 'white', outline: 'none' }}
+                />
+             </div>
           </div>
         </div>
 
-        {/* Feature Toggles */}
-        <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-           <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white', marginBottom: '20px' }}>صلاحيات المنصة</h3>
-           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              {[
-                { label: 'تفعيل التسجيل الجديد', key: 'registrationEnabled' },
-                { label: 'تفعيل الرسائل الخاصة', key: 'messagesEnabled' },
-                { label: 'تفعيل رفع الوسائط', key: 'uploadsEnabled' },
-                { label: 'تفعيل القصص (Stories)', key: 'storiesEnabled' }
-              ].map((item) => (
-                <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px' }}>
-                  <span style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>{item.label}</span>
-                  <div onClick={() => toggle(item.key)} style={{ width: '40px', height: '22px', background: settings?.[item.key] ? '#3b82f6' : '#333', borderRadius: '11px', position: 'relative', cursor: 'pointer' }}>
-                    <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%', position: 'absolute', top: '3px', right: settings?.[item.key] ? '21px' : '3px', transition: 'all 0.2s' }} />
-                  </div>
-                </div>
-              ))}
-           </div>
-        </div>
-
-        {/* Global Announcement */}
-        <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <Megaphone size={20} color="#f59e0b" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white' }}>إعلان عالمي (Global Announcement)</h3>
+        {/* Global Broadcast Box */}
+        <div className="glass-card" style={{ padding: '32px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(30, 41, 59, 0.4)' }}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <Megaphone size={22} color="#f59e0b" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white' }}>بث تنبيه عاجل</h3>
            </div>
            <textarea 
-             value={settings?.announcement?.text}
-             onChange={(e) => setSettings({...settings, announcement: {...settings.announcement, text: e.target.value}})}
-             placeholder="أدخل نص الإعلان الذي سيظهر لجميع المستخدمين..."
-             style={{ width: '100%', height: '100px', background: '#0a0f1c', border: '1px solid #333', borderRadius: '12px', padding: '16px', color: 'white', resize: 'none', marginBottom: '16px' }}
+             value={alertMessage}
+             onChange={(e) => setAlertMessage(e.target.value)}
+             placeholder="اكتب رسالة ستظهر فوراً في شريط أحمر لجميع المستخدمين..."
+             style={{ width: '100%', height: '100px', background: '#0a0f1c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '16px', color: 'white', resize: 'none', marginBottom: '16px', outline: 'none' }}
            />
-           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <input 
-                type="checkbox" 
-                checked={settings?.announcement?.isActive}
-                onChange={() => setSettings({...settings, announcement: {...settings.announcement, isActive: !settings.announcement.isActive}})}
-              />
-              <span style={{ color: '#94a3b8' }}>تفعيل الإعلان فوراً</span>
+           <button onClick={handleBroadcast} style={{ width: '100%', background: '#f59e0b', color: 'black', border: 'none', padding: '14px', borderRadius: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
+              بث التنبيه الآن
+           </button>
+        </div>
+
+        {/* Features Management */}
+        <div className="glass-card" style={{ padding: '32px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(30, 41, 59, 0.4)' }}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <Settings size={22} color="#3b82f6" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'white' }}>إدارة ميزات المنصة</h3>
+           </div>
+           <div style={{ display: 'grid', gap: '12px' }}>
+              {[
+                { label: 'التسجيل الجديد', key: 'registrationEnabled' },
+                { label: 'الرسائل الخاصة (DM)', key: 'dmsEnabled' },
+                { label: 'دردشة الـ Hubs', key: 'hubChatEnabled' },
+                { label: 'القصص (Stories)', key: 'storiesEnabled' },
+                { label: 'التعليقات', key: 'commentsEnabled' },
+                { label: 'رفع الملفات والوسائط', key: 'uploadsEnabled' },
+                { label: 'الدفاتر الخاصة (Notebooks)', key: 'notebooksEnabled' }
+              ].map((item) => (
+                <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '12px 16px', borderRadius: '14px' }}>
+                   <span style={{ color: '#cbd5e1', fontSize: '0.9rem', fontWeight: '500' }}>{item.label}</span>
+                   <div onClick={() => toggle(item.key)} style={{ width: '44px', height: '24px', background: settings?.[item.key] ? '#10b981' : '#334155', borderRadius: '12px', position: 'relative', cursor: 'pointer', transition: '0.2s' }}>
+                      <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%', position: 'absolute', top: '3px', right: settings?.[item.key] ? '23px' : '3px', transition: '0.2s' }} />
+                   </div>
+                </div>
+              ))}
            </div>
         </div>
 

@@ -30,7 +30,7 @@ import { GlobalHeader, NotificationDrawer } from '../components/common/LayoutCom
 // Services
 import api from '../services/api';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -78,39 +78,38 @@ const HomePage = () => {
       socketInstance.emit('setup', user);
       setSocket(socketInstance);
 
+      // Initialize Global Listeners (Alerts, Force Logout, etc.)
+      useAppStore.getState().initGlobalSocketListeners(socketInstance);
+
       fetchHubs();
       fetchNotifications();
 
-      socketInstance.on('online_users', (users) => setOnlineUsers(users));
-      socketInstance.on('typing', (data) => setTyping(data.room, data));
-      socketInstance.on('stop_typing', (data) => setTyping(data.room, null));
+      socketInstance.on('online_users_update', (users) => setOnlineUsers(users));
+      socketInstance.on('dm:newNotification', (msg) => {
+        addNotification({
+          _id: Date.now(),
+          type: 'message',
+          sender: msg.sender,
+          message: `رسالة جديدة من ${msg.sender.fullName}`,
+          createdAt: new Date()
+        });
+        fetchNotifications();
+      });
+      
       socketInstance.on('notification_received', (notif) => addNotification(notif));
       socketInstance.on('new_post', (post) => handleNewPost(post));
       socketInstance.on('post_updated', (post) => handleUpdatedPost(post));
       socketInstance.on('chat_updated', (chat) => updateChat(chat));
 
-      socketInstance.on('panic_alert', (data) => {
-        toast.error(`🚨 فزعة عاجلة من: ${data.authorName}\n${data.text}`, {
-          duration: 10000,
-          action: {
-             label: 'عرض',
-             onClick: () => {
-                setActiveTab('vibes');
-                setActiveVibe('panic');
-             }
-          }
+      socketInstance.on('global:alert', (data) => {
+        toast.error(`🚨 ${data.message}`, {
+          duration: 15000,
+          description: `بواسطة: ${data.sender}`
         });
       });
 
-      const handleNavToPanic = () => {
-        setActiveTab('vibes');
-        setActiveVibe('panic');
-      };
-      window.addEventListener('nav-to-panic', handleNavToPanic);
-
       return () => {
         socketInstance.disconnect();
-        window.removeEventListener('nav-to-panic', handleNavToPanic);
       };
     }
   }, [user, setSocket, handleNewPost, handleUpdatedPost, fetchHubs, addNotification, fetchNotifications, setOnlineUsers, setTyping, updateChat]);

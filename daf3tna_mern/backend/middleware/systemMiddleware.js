@@ -1,67 +1,79 @@
 import SiteSetting from '../models/SiteSetting.js';
-import BanList from '../models/BanList.js';
-import asyncHandler from './asyncHandler.js';
-import User from '../models/User.js';
-import jwt from 'jsonwebtoken';
 
-export const checkSystemStatus = asyncHandler(async (req, res, next) => {
-  // 1. IP Ban Check
-  const clientIp = req.ip || req.headers['x-forwarded-for'];
-  const isBanned = await BanList.findOne({ value: clientIp, type: 'ip', isActive: true });
-  if (isBanned) {
-    return res.status(403).json({ 
-      message: 'تم حظر عنوان IP الخاص بك من دخول المنصة',
-      reason: isBanned.reason 
-    });
-  }
+/**
+ * Middleware to check global site settings and feature toggles.
+ * Blocks requests if site is in lockdown or feature is disabled.
+ * Superadmins can bypass most locks.
+ */
+export const checkSystemStatus = async (req, res, next) => {
+  try {
+    const settings = await SiteSetting.findOne();
+    if (!settings) return next();
 
-  // 2. Fetch Site Settings (Cached or fresh)
-  const settings = await SiteSetting.findOne();
-  if (!settings) return next();
+    const isSuperAdmin = req.user && req.user.role === 'superadmin';
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
 
-  req.siteSettings = settings;
-
-  // 3. Maintenance Mode Check
-  let isStaff = false;
-  if (req.headers.authorization?.startsWith('Bearer')) {
-    try {
-      const token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-      const user = await User.findById(decoded.id).select('role');
-      if (user && ['moderator', 'admin', 'superadmin'].includes(user.role)) {
-        isStaff = true;
-      }
-    } catch (err) { /* ignore invalid token for this check */ }
-  }
-
-  // If maintenance is on and user is not staff, block based on type
-  if (settings.maintenanceMode && !isStaff) {
-    if (settings.maintenanceType === 'emergency' || settings.maintenanceType === 'lockdown') {
+    // 1. Maintenance / Lockdown Checks
+    const isAuthRoute = req.path.startsWith('/api/auth');
+    
+    if (settings.maintenanceMode && !isAdmin && !isAuthRoute) {
       return res.status(503).json({ 
-        success: false,
-        message: settings.maintenanceMessage || 'الموقع تحت الصيانة حالياً',
-        type: settings.maintenanceType
+        message: settings.maintenanceMessage || 'الموقع في حالة صيانة حالياً. يرجى العودة لاحقاً.',
+        maintenance: true 
       });
     }
+
+    // 2. Feature-Specific Checks
+    const path = req.path;
+    const method = req.method;
+
+    // Registration Lock
+    if (path.includes('/auth/register') && !settings.registrationEnabled) {
+      return res.status(403).json({ message: 'التسجيل معطل حالياً من قبل الإدارة.' });
+    }
+
+    // DM Lock
+    if (path.includes('/chats') && !settings.dmsEnabled && !isAdmin) {
+      return res.status(403).json({ message: 'المراسلات الخاصة معطلة حالياً.' });
+    }
+
+    // Hub Chat Lock
+    if (path.includes('/vibes/notebooks') && path.includes('/messages') && !settings.notebooksEnabled && !isAdmin) {
+      return res.status(403).json({ message: 'إضافة رسائل للدفاتر معطلة حالياً.' });
+    }
+
+    // General Uploads
+    if (path.includes('/upload') && !settings.uploadsEnabled && !isAdmin) {
+      return res.status(403).json({ message: 'رفع الملفات معطل حالياً.' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('System Middleware Error:', error);
+    next();
   }
+};
 
-  next();
-});
+/**
+ * Granular middleware to restrict specific features based on settings.
+ * Usage: router.post('/...', restrictFeature('registrationEnabled'), handler)
+ */
+export const restrictFeature = (featureKey) => async (req, res, next) => {
+  try {
+    const settings = await SiteSetting.findOne();
+    if (!settings) return next();
 
-export const restrictFeature = (feature) => (req, res, next) => {
-  const settings = req.siteSettings;
-  if (!settings) return next();
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
+    
+    if (!settings[featureKey] && !isAdmin) {
+      return res.status(403).json({ 
+        message: 'عذراً، هذه الميزة معطلة حالياً من قبل الإدارة.',
+        feature: featureKey
+      });
+    }
 
-  const isRestricted = (feature === 'registration' && !settings.registrationEnabled) ||
-                      (feature === 'messages' && !settings.messagesEnabled) ||
-                      (feature === 'uploads' && !settings.uploadsEnabled) ||
-                      (feature === 'stories' && !settings.storiesEnabled);
-
-  if (isRestricted && (!req.user || !['admin', 'superadmin'].includes(req.user.role))) {
-    return res.status(403).json({ 
-      message: `عذراً، ميزة ${feature} معطلة مؤقتاً من قبل الإدارة`
-    });
+    next();
+  } catch (err) {
+    next();
   }
-
-  next();
 };
