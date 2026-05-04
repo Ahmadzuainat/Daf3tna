@@ -31,7 +31,7 @@ export const getFeed = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    data: posts,
+    data: filteredPosts,
     pagination: {
       total,
       page: Number(page),

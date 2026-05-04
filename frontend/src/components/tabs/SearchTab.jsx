@@ -31,7 +31,7 @@ const SearchTab = ({ onUserClick }) => {
     const searchTimer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/users/search?name=${query}&username=${query}`);
+        const res = await api.get(`/users/search?q=${query}`);
         setResults(res.data);
       } catch (err) {
         console.error('Search failed', err);

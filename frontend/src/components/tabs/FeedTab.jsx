@@ -287,7 +287,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
                   <div style={{ flex: 1, padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     {/* Micro Text */}
                     {post.text && (
-                      <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.8rem', lineHeight: '1.5', marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: '3', WebkitBoxOrient: 'vertical', overflow: 'hidden', fontWeight: '400' }}>
+                      <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.8rem', lineHeight: '1.5', marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: '3', WebkitBoxOrient: 'vertical', overflow: 'hidden', fontWeight: '400', whiteSpace: 'pre-wrap' }}>
                         {post.text}
                       </div>
                     )}
@@ -414,7 +414,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
                 </button>
               </div>
             ) : (
-              selectedPost.text && <p style={{ padding: '0 16px', fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '16px', color: 'white' }}>{selectedPost.text}</p>
+              selectedPost.text && <p style={{ padding: '0 16px', fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '16px', color: 'white', whiteSpace: 'pre-wrap' }}>{selectedPost.text}</p>
             )}
 
             {selectedPost.mediaUrls?.[0] && <img src={getImageUrl(selectedPost.mediaUrls[0])} style={{ width: '100%', maxHeight: '500px', objectFit: 'contain', background: '#000' }} />}

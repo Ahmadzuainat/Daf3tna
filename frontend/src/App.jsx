@@ -35,6 +35,7 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const { token, user } = useAuthStore();
+  const { siteSettings } = useAppStore();
   const [maintenance, setMaintenance] = useState(null);
   const isLoggedIn = !!(token && user);
 
@@ -59,6 +60,20 @@ function App() {
     };
     checkStatus();
   }, [user, isLoggedIn]);
+
+  // Sync maintenance state with global store for real-time lockdown
+  useEffect(() => {
+    if (siteSettings?.maintenanceMode) {
+      const isStaff = user && ['moderator', 'admin', 'superadmin'].includes(user.role);
+      if (!isStaff && (siteSettings.maintenanceType === 'lockdown' || siteSettings.maintenanceType === 'emergency')) {
+        setMaintenance(siteSettings);
+      } else {
+        setMaintenance(null);
+      }
+    } else {
+      setMaintenance(null);
+    }
+  }, [siteSettings, user]);
 
   // Apply Theme
   useEffect(() => {

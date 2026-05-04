@@ -9,6 +9,40 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
+// Search (Optimized) - MOVED ABOVE :username
+router.get('/search', protect, async (req, res) => {
+  const { name, username, q } = req.query;
+  try {
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const baseQuery = isSuperAdmin ? {} : { batchId: req.user.batchId };
+    
+    let searchQuery = { ...baseQuery };
+    
+    if (q) {
+      searchQuery.$or = [
+        { username: { $regex: q, $options: 'i' } },
+        { fullName: { $regex: q, $options: 'i' } }
+      ];
+    } else if (username || name) {
+      const orConditions = [];
+      if (username) orConditions.push({ username: { $regex: username, $options: 'i' } });
+      if (name) orConditions.push({ fullName: { $regex: name, $options: 'i' } });
+      searchQuery.$or = orConditions;
+    } else {
+      return res.status(400).json({ message: 'يجب إدخال اسم أو يوزرنيم' });
+    }
+
+    const users = await User.find(searchQuery)
+      .select('fullName username avatarUrl bio major followers isPrivate')
+      .limit(15)
+      .lean();
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Me - Restore Session
 router.get('/me', protect, (req, res) => res.json(req.user));
 
@@ -36,27 +70,6 @@ router.put('/profile', protect, upload.fields([
   
 // Get Profile by Username
 router.get('/:username', protect, getProfile);
-
-// Search (Optimized)
-router.get('/search', protect, async (req, res) => {
-  const { name, username } = req.query;
-  try {
-    const isSuperAdmin = req.user.role === 'superadmin';
-    const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
-    if (username) query.username = { $regex: `^${username}`, $options: 'i' }; // Partial match from start
-    else if (name) query.fullName = { $regex: name, $options: 'i' };
-    else return res.status(400).json({ message: 'يجب إدخال اسم أو يوزرنيم' });
-
-    const users = await User.find(query)
-      .select('fullName username avatarUrl bio major followers isPrivate')
-      .limit(15)
-      .lean();
-
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
 
 // Search History
 router.get('/search-history', protect, async (req, res) => {

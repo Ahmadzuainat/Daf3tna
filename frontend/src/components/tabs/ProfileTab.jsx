@@ -235,7 +235,7 @@ const ProfileTab = ({ user: profileUser, isOwnProfile, onSettingsClick, setSelec
               placeholder="اكتب نبذة عنك..."
             />
           ) : (
-            <p style={{ color: 'var(--text-primary)', opacity: 0.8, lineHeight: '1.5', maxWidth: '500px' }}>{displayUser?.bio || 'لا توجد نبذة تعريفية.'}</p>
+            <p style={{ color: 'var(--text-primary)', opacity: 0.8, lineHeight: '1.5', maxWidth: '500px', whiteSpace: 'pre-wrap' }}>{displayUser?.bio || 'لا توجد نبذة تعريفية.'}</p>
           )}
         </div>
 

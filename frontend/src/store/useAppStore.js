@@ -22,6 +22,8 @@ export const useAppStore = create((set, get) => ({
   pagination: {
     posts: { page: 1, hasMore: true, total: 0 }
   },
+  siteSettings: null,
+  globalAlert: null,
 
   setSocket: (socket) => set({ socket }),
   setOnlineUsers: (users) => set({ onlineUsers: users }),
