@@ -61,13 +61,27 @@ router.post('/:id/view', protect, async (req, res) => {
 // Delete Story
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const story = await Story.findOne({ _id: req.params.id, user: req.user._id });
-    if (!story) return res.status(404).json({ message: 'القصة غير موجودة أو غير مصرح لك بحذفها' });
+    const story = await Story.findById(req.params.id);
+    if (!story) return res.status(404).json({ message: 'القصة غير موجودة' });
+
+    // Check ownership or admin status
+    const isOwner = story.user.toString() === req.user._id.toString();
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذه القصة' });
+    }
+
+    // Optional: Delete from Cloudinary if mediaPublicId exists
+    // (Needs cloudinary import and config, which is in uploadMiddleware/server.js)
+    // For now, let's just delete from DB as requested, 
+    // but ensure the ownership check is solid.
     
     await Story.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف القصة بنجاح' });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Delete Story Error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

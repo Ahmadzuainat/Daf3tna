@@ -502,7 +502,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
               <span style={{ color: 'white', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{viewingStory.user?.fullName}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              {viewingStory.user?._id === user?._id && (
+              {((viewingStory.user?._id || viewingStory.user) === user?._id || ['admin', 'superadmin'].includes(user?.role)) && (
                 <Trash2 size={24} color="white" onClick={() => handleDeleteStory(viewingStory._id)} style={{ cursor: 'pointer', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
               )}
               <X size={32} color="white" onClick={() => setViewingStory(null)} style={{ cursor: 'pointer', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
