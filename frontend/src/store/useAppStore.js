@@ -24,6 +24,7 @@ export const useAppStore = create((set, get) => ({
   },
   siteSettings: null,
   globalAlert: null,
+  isLoadingHubs: false,
 
   setSocket: (socket) => set({ socket }),
   setOnlineUsers: (users) => set({ onlineUsers: users }),
@@ -174,10 +175,14 @@ export const useAppStore = create((set, get) => ({
 
   /* ─────────── HUBS ─────────── */
   fetchHubs: async () => {
+    set({ isLoadingHubs: true });
     try {
       const res = await api.get('/hubs');
-      set({ hubs: res.data });
-    } catch (err) { console.error('fetchHubs:', err); }
+      set({ hubs: res.data, isLoadingHubs: false });
+    } catch (err) { 
+      console.error('fetchHubs:', err);
+      set({ isLoadingHubs: false });
+    }
   },
 
   joinHub: async (hubId) => {

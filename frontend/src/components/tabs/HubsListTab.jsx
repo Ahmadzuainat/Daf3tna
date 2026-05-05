@@ -4,7 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
 
 const HubsListTab = ({ onHubClick }) => {
-  const { hubs, fetchHubs } = useAppStore();
+  const { hubs, fetchHubs, isLoadingHubs } = useAppStore();
   const { user } = useAuthStore();
   
   useEffect(() => { 
@@ -20,11 +20,21 @@ const HubsListTab = ({ onHubClick }) => {
     'linear-gradient(135deg,#EC4899,#F43F5E)',
   ];
 
-  if (hubs.length === 0) {
+  if (isLoadingHubs) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
         <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
         جاري تحميل الغرف...
+      </div>
+    );
+  }
+
+  if (hubs.length === 0) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+        <Users size={48} style={{ marginBottom: '16px', opacity: 0.3 }} />
+        <h3 style={{ color: 'white', marginBottom: '8px' }}>لا توجد غرف متاحة حالياً</h3>
+        <p>يبدو أنه لا توجد مجتمعات مخصصة لدفعتك بعد.</p>
       </div>
     );
   }
