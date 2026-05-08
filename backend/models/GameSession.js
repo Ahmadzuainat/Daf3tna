@@ -12,9 +12,8 @@ const gameSessionSchema = new mongoose.Schema({
     required: true
   },
   batchId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Batch',
-    required: false // Changed to false for better stability
+    type: String,
+    required: false
   },
   players: [{
     user: {
