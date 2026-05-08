@@ -24,6 +24,7 @@ const VibesTab = ({ onExitFullScreen, activeVibe, setActiveVibe }) => {
   if (activeVibe === 'games') return <GamesView onBack={() => setActiveVibe(null)} />;
   
   const banners = [
+    { id: 'games', title: 'الألعاب (Games)', desc: 'العب مع أصدقائك في تحديات فورية ومسلية', icon: Zap, color: 'linear-gradient(135deg, #8B5CF6, #4C1D95)' },
     { id: 'instants', title: 'اللقطات الفورية', desc: 'شارك لحظتك العفوية (تختفي بعد المشاهدة)', icon: Zap, color: 'linear-gradient(135deg, #F97316, #EC4899)' },
     { id: 'notebooks', title: 'دفاتر التخرج', desc: 'توقيعات ورسائل تبقى للذكرى', icon: Book, color: 'linear-gradient(135deg, #2563EB, #1E3A8A)' },
     { id: 'panic', title: 'زر الفزعة', desc: 'اطلب المساعدة العاجلة من الدفعة', icon: AlertTriangle, color: 'linear-gradient(135deg, #EF4444, #991B1B)' },
@@ -31,7 +32,6 @@ const VibesTab = ({ onExitFullScreen, activeVibe, setActiveVibe }) => {
     { id: 'quotes', title: 'اقتباسات الدكاترة', desc: 'أجمل وأغرب ما قيل في المحاضرات', icon: Quote, color: 'linear-gradient(135deg, #3B82F6, #1E3A8A)' },
     { id: 'confessions', title: 'حائط المجهول', desc: 'اعترف وفضفض براحتك وبسرية تامة', icon: Ghost, color: 'linear-gradient(135deg, #D946EF, #701A75)' },
     { id: 'time_capsule', title: 'كبسولة الزمن', desc: 'ذكريات سرية مقفلة حتى يوم التخرج', icon: Lock, color: 'linear-gradient(135deg, #10B981, #065F46)' },
-    { id: 'games', title: 'الألعاب (Games)', desc: 'العب مع أصدقائك في تحديات فورية ومسلية', icon: Zap, color: 'linear-gradient(135deg, #8B5CF6, #4C1D95)' },
   ];
 
   return (
