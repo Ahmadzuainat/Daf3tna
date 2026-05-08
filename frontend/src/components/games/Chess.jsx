@@ -94,58 +94,64 @@ const ChessGame = ({ onBack }) => {
   function makeRandomMove() {
     setIsAiThinking(true);
     setTimeout(() => {
-      const possibleMoves = chess.moves();
-      if (chess.isGameOver() || chess.isDraw() || possibleMoves.length === 0) {
+      const moves = chess.moves();
+      if (chess.isGameOver() || chess.isDraw() || moves.length === 0) {
         setIsAiThinking(false);
         return;
       }
       
-      const randomIndex = Math.floor(Math.random() * possibleMoves.length);
-      const move = possibleMoves[randomIndex];
+      const randomIndex = Math.floor(Math.random() * moves.length);
+      const move = moves[randomIndex];
       
-      const gameCopy = new Chess(chess.fen());
-      gameCopy.move(move);
-      setChess(gameCopy);
+      const newChess = new Chess(chess.fen());
+      newChess.move(move);
+      setChess(newChess);
       setIsAiThinking(false);
     }, 1000);
   }
 
   function onDrop(sourceSquare, targetSquare) {
-    // 1. Check if it's even your turn
+    // 1. Identification
     const currentTurnId = game?.currentTurn?._id || game?.currentTurn;
     const userId = user?._id || user?.id;
-    const isMyTurn = mode === 'ai' ? !isAiThinking : (currentTurnId?.toString() === userId?.toString());
-
-    if (!isMyTurn) {
-      toast.error('ليس دورك حالياً');
+    
+    // 2. Turn Validation
+    if (mode === 'friend') {
+      if (!game || game.status !== 'playing') return false;
+      if (currentTurnId?.toString() !== userId?.toString()) {
+        toast.error('ليس دورك حالياً');
+        return false;
+      }
+    } else if (mode === 'ai' && isAiThinking) {
       return false;
     }
 
     try {
-      // 2. Validate move locally first
-      const gameCopy = new Chess(chess.fen());
-      const moveResult = gameCopy.move({
+      // 3. Try move locally
+      const newChess = new Chess(chess.fen());
+      const move = newChess.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: 'q',
       });
 
-      if (moveResult === null) return false; // Illegal move
+      if (move === null) return false;
 
-      // 3. Update local state immediately for smoothness
-      setChess(gameCopy);
+      // 4. Update UI immediately
+      setChess(newChess);
 
+      // 5. Handle next steps
       if (mode === 'ai') {
-        setTimeout(makeRandomMove, 1000);
+        setTimeout(makeRandomMove, 500);
       } else {
-        // 4. Send to server for multiplayer
         socket.emit('game:move', { 
           roomCode: game.roomCode, 
           move: { from: sourceSquare, to: targetSquare, promotion: 'q' } 
         });
       }
       return true;
-    } catch (e) {
+    } catch (error) {
+      console.error('Move error:', error);
       return false;
     }
   }
