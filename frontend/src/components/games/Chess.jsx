@@ -84,7 +84,11 @@ const ChessGame = ({ onBack }) => {
 
   function onDrop(sourceSquare, targetSquare) {
     if (game?.status !== 'playing') return false;
-    if (game.currentTurn._id !== user._id) {
+    
+    const currentTurnId = game.currentTurn?._id || game.currentTurn;
+    const userId = user?._id || user?.id;
+
+    if (currentTurnId?.toString() !== userId?.toString()) {
       toast.error('ليس دورك حالياً');
       return false;
     }

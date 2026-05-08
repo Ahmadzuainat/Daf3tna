@@ -44,8 +44,12 @@ const registerGameHandlers = (io, socket) => {
       const game = await GameSession.findOne({ roomCode, status: 'playing' });
       if (!game) return;
 
-      // Validate turn
-      if (game.currentTurn.toString() !== socket.userId) {
+      // Validate turn - Robust string comparison
+      const currentTurnId = game.currentTurn ? game.currentTurn.toString() : null;
+      const socketUserId = socket.userId ? socket.userId.toString() : null;
+
+      if (currentTurnId !== socketUserId) {
+        console.log(`🚫 Turn mismatch: Current=${currentTurnId}, Socket=${socketUserId}`);
         return socket.emit('game:error', { message: 'ليس دورك حالياً' });
       }
 

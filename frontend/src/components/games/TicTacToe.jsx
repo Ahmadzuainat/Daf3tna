@@ -73,7 +73,10 @@ const TicTacToe = ({ onBack }) => {
   const handleMove = (index) => {
     if (mode === 'friend') {
       if (game.status !== 'playing') return;
-      if (game.currentTurn._id !== user._id) {
+      const currentTurnId = game.currentTurn?._id || game.currentTurn;
+      const userId = user?._id || user?.id;
+
+      if (currentTurnId?.toString() !== userId?.toString()) {
         toast.error('ليس دورك حالياً');
         return;
       }
