@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { ArrowRight, Ghost, Send } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
+import { ArrowRight, Ghost, Send, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ConfessionsView = ({ onBack }) => {
-  const { confessions, fetchConfessions, addConfession } = useAppStore();
+  const { user: me } = useAuthStore();
+  const { confessions, fetchConfessions, addConfession, deleteConfession } = useAppStore();
   const [newConf, setNewConf] = useState('');
   const [sending, setSending] = useState(false);
   
   useEffect(() => { fetchConfessions(); }, [fetchConfessions]);
+  
+  const handleDelete = async (id) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا الاعتراف؟')) return;
+    try {
+      await deleteConfession(id);
+      toast.success('تم الحذف بنجاح');
+    } catch(e) { toast.error('فشل الحذف'); }
+  };
   
   const handleSend = async () => {
     if (!newConf.trim() || sending) return;
@@ -31,8 +41,18 @@ const ConfessionsView = ({ onBack }) => {
       <div style={{ flex: 1, padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
         {confessions.map(c => (
           <div key={c._id} style={{ background: 'rgba(217, 70, 239, 0.05)', border: '1px solid rgba(217, 70, 239, 0.2)', borderRadius: '20px', padding: '20px', position: 'relative', animation: 'fadeInUp 0.3s ease-out' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: '#D946EF', opacity: 0.8 }}>
-              <Ghost size={20} /> <span style={{ fontWeight: 'bold', letterSpacing: '2px' }}>ANONYMOUS</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#D946EF', opacity: 0.8 }}>
+                <Ghost size={20} /> <span style={{ fontWeight: 'bold', letterSpacing: '2px' }}>ANONYMOUS</span>
+              </div>
+              {(me?.role === 'superadmin' || me?.role === 'admin' || me?.role === 'moderator') && (
+                <Trash2 
+                  size={18} 
+                  color="#EF4444" 
+                  style={{ cursor: 'pointer', opacity: 0.6 }} 
+                  onClick={() => handleDelete(c._id)}
+                />
+              )}
             </div>
             <p style={{ color: 'white', fontSize: '1.2rem', lineHeight: '1.6', textShadow: '0 0 2px rgba(255,255,255,0.5)' }}>{c.text}</p>
             <div style={{ textAlign: 'left', marginTop: '16px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>{new Date(c.createdAt).toLocaleString('ar-EG')}</div>

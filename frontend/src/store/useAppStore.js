@@ -127,6 +127,15 @@ export const useAppStore = create((set, get) => ({
     } catch (err) { console.error('commentPost:', err); throw err; }
   },
 
+  deleteComment: async (postId, commentId) => {
+    try {
+      await api.delete(`/posts/${postId}/comment/${commentId}`);
+      set(state => ({
+        posts: state.posts.map(p => p._id === postId ? { ...p, commentsCount: Math.max(0, (p.commentsCount || 0) - 1) } : p)
+      }));
+    } catch (err) { console.error('deleteComment:', err); throw err; }
+  },
+
   fetchPostDetails: async (postId) => {
     try {
       const res = await api.get(`/posts/${postId}`);
@@ -346,6 +355,13 @@ export const useAppStore = create((set, get) => ({
     } catch (err) { console.error('addConfession:', err); throw err; }
   },
 
+  deleteConfession: async (id) => {
+    try {
+      await api.delete(`/vibes/confessions/${id}`);
+      set(state => ({ confessions: state.confessions.filter(c => c._id !== id) }));
+    } catch (err) { console.error('deleteConfession:', err); throw err; }
+  },
+
   /* ─────────── QUOTES ─────────── */
   fetchQuotes: async () => {
     try {
@@ -359,6 +375,13 @@ export const useAppStore = create((set, get) => ({
       const res = await api.post('/vibes/quotes', { text, doctor, subject });
       set(state => ({ quotes: [res.data, ...state.quotes] }));
     } catch (err) { console.error('addQuote:', err); throw err; }
+  },
+
+  deleteQuote: async (id) => {
+    try {
+      await api.delete(`/vibes/quotes/${id}`);
+      set(state => ({ quotes: state.quotes.filter(q => q._id !== id) }));
+    } catch (err) { console.error('deleteQuote:', err); throw err; }
   },
 
   /* ─────────── PANICS ─────────── */
@@ -497,6 +520,13 @@ export const useAppStore = create((set, get) => ({
     } catch (err) { console.error('toggleNotebookVisibility:', err); }
   },
 
+  deleteNotebook: async (id) => {
+    try {
+      await api.delete(`/vibes/notebooks/${id}`);
+      set(state => ({ notebooks: state.notebooks.filter(n => n._id !== id) }));
+    } catch (err) { console.error('deleteNotebook:', err); throw err; }
+  },
+
   /* ─────────── TIME CAPSULE ─────────── */
   fetchTimeCapsules: async () => {
     try {
@@ -514,6 +544,13 @@ export const useAppStore = create((set, get) => ({
       console.error('createTimeCapsule:', err); 
       throw err; 
     }
+  },
+
+  deleteTimeCapsule: async (id) => {
+    try {
+      await api.delete(`/vibes/time-capsules/${id}`);
+      set(state => ({ timeCapsules: state.timeCapsules.filter(c => c._id !== id) }));
+    } catch (err) { console.error('deleteTimeCapsule:', err); throw err; }
   },
 
   /* ─────────── FOLLOWS ─────────── */

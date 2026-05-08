@@ -15,7 +15,7 @@ const PostSkeleton = () => (
 );
 
 const FeedTab = ({ selectedPost, setSelectedPost }) => {
-  const { posts, stories, fetchPosts, fetchStories, likePost, commentPost, addStory, deleteStory, viewStory, onlineUsers, pagination, setScrollPosition, scrollPositions, deletePost, updatePost, fetchPostDetails } = useAppStore();
+  const { posts, stories, fetchPosts, fetchStories, likePost, commentPost, deleteComment, addStory, deleteStory, viewStory, onlineUsers, pagination, setScrollPosition, scrollPositions, deletePost, updatePost, fetchPostDetails } = useAppStore();
   const { user } = useAuthStore();
   const [commentText, setCommentText] = useState('');
   const [viewingStory, setViewingStory] = useState(null);
@@ -74,6 +74,21 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
       }));
     } catch (err) {
       toast.error('فشل إضافة التعليق');
+    }
+  };
+
+  const handleDeleteComment = async (postId, commentId) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا التعليق؟')) return;
+    try {
+      await deleteComment(postId, commentId);
+      setSelectedPost(prev => ({
+        ...prev,
+        comments: prev.comments.filter(c => c._id !== commentId),
+        commentsCount: Math.max(0, (prev.commentsCount || 0) - 1)
+      }));
+      toast.success('تم حذف التعليق');
+    } catch (err) {
+      toast.error('فشل حذف التعليق');
     }
   };
 
@@ -381,7 +396,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
                   </div>
                 </div>
 
-                {( (selectedPost.user?._id || selectedPost.user) === user?._id ) && (
+                {( (selectedPost.user?._id || selectedPost.user) === user?._id || ['admin', 'superadmin', 'moderator'].includes(user?.role) ) && (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
                       onClick={() => setIsEditingPost(!isEditingPost)}
@@ -449,7 +464,10 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
                       <div style={{ display: 'flex', gap: '16px', padding: '4px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
                         <span style={{ cursor: 'pointer' }}>إعجاب</span>
                         <span style={{ cursor: 'pointer' }}>رد</span>
-                        <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                        {(c.user?._id === user?._id || (selectedPost.user?._id || selectedPost.user) === user?._id || ['admin', 'superadmin', 'moderator'].includes(user?.role)) && (
+                          <span onClick={() => handleDeleteComment(selectedPost._id, c._id)} style={{ cursor: 'pointer', color: '#EF4444' }}>حذف</span>
+                        )}
+                        <span>{new Date(c.createdAt).toLocaleDateString('ar-EG')}</span>
                       </div>
                     </div>
                   </div>
@@ -502,7 +520,7 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
               <span style={{ color: 'white', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{viewingStory.user?.fullName}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              {((viewingStory.user?._id || viewingStory.user) === user?._id || ['admin', 'superadmin'].includes(user?.role)) && (
+              {((viewingStory.user?._id || viewingStory.user) === user?._id || ['admin', 'superadmin', 'moderator'].includes(user?.role)) && (
                 <Trash2 size={24} color="white" onClick={() => handleDeleteStory(viewingStory._id)} style={{ cursor: 'pointer', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
               )}
               <X size={32} color="white" onClick={() => setViewingStory(null)} style={{ cursor: 'pointer', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />

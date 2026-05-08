@@ -54,7 +54,7 @@ const PanicView = ({ onBack }) => {
                 <h4 style={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>{panic.author?.fullName}</h4>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{new Date(panic.createdAt).toLocaleString('ar-EG')}</p>
               </div>
-              {panic.author?._id === user?._id && (
+              {(panic.author?._id === user?._id || ['admin', 'superadmin', 'moderator'].includes(user?.role)) && (
                 <button onClick={() => deletePanic(panic._id)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', padding: '8px', borderRadius: '12px', cursor: 'pointer' }}>
                   <Trash2 size={20} />
                 </button>

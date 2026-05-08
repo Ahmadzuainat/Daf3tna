@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
 const NotebooksView = ({ onBack }) => {
-  const { notebooks, fetchNotebooks, addNotebookMessage, deleteNotebookMessage, createNotebook, updateNotebook } = useAppStore();
+  const { notebooks, fetchNotebooks, addNotebookMessage, deleteNotebookMessage, createNotebook, updateNotebook, deleteNotebook } = useAppStore();
   const { user } = useAuthStore();
   const [selectedNotebook, setSelectedNotebook] = useState(null);
   const [signText, setSignText] = useState('');
@@ -71,6 +71,31 @@ const NotebooksView = ({ onBack }) => {
     }
   };
 
+  const handleDeleteNotebook = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('هل أنت متأكد من حذف هذا الدفتر بالكامل؟')) return;
+    try {
+      await deleteNotebook(id);
+      toast.success('تم حذف الدفتر بنجاح');
+    } catch(e) { toast.error('فشل حذف الدفتر'); }
+  };
+
+  const handleDeleteMessage = async (notebookId, msgId) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذه الرسالة؟')) return;
+    try {
+      await deleteNotebookMessage(notebookId, msgId);
+      toast.success('تم حذف الرسالة');
+      // Update local state immediately if detail view is open
+      if (selectedNotebook) {
+        setSelectedNotebook({ 
+          ...selectedNotebook, 
+          messages: selectedNotebook.messages.filter(m => m._id !== msgId) 
+        });
+      }
+      fetchNotebooks(); 
+    } catch(e) { toast.error('فشل حذف الرسالة'); }
+  };
+
   // 1. DETAIL VIEW
   if (selectedNotebook) {
     const isOwner = selectedNotebook.owner?._id === user?._id;
@@ -112,16 +137,24 @@ const NotebooksView = ({ onBack }) => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                  {selectedNotebook.messages?.map((msg, idx) => (
-                   <div key={idx} style={{ background: 'rgba(30, 41, 59, 0.4)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', justifyContent: 'flex-end' }}>
-                         <div style={{ textAlign: 'right' }}>
-                            <span style={{ fontWeight: 'bold', color: 'white', display: 'block', fontSize: '0.9rem' }}>{msg.author?.fullName}</span>
-                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{new Date(msg.createdAt).toLocaleDateString('ar-EG')}</span>
-                         </div>
-                         <img src={msg.author?.avatarUrl || "https://ui-avatars.com/api/?name=U"} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-                      </div>
-                      <p style={{ color: 'rgba(255,255,255,0.8)', lineHeight: '1.6', textAlign: 'right', fontSize: '1rem' }}>{msg.text}</p>
-                   </div>
+                    <div key={idx} style={{ background: 'rgba(30, 41, 59, 0.4)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', justifyContent: 'flex-end' }}>
+                          {(isOwner || user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'moderator') && (
+                            <button 
+                              onClick={() => handleDeleteMessage(selectedNotebook._id, msg._id)}
+                              style={{ position: 'absolute', left: '16px', top: '16px', background: 'none', border: 'none', color: 'rgba(239, 68, 68, 0.5)', cursor: 'pointer' }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                          <div style={{ textAlign: 'right' }}>
+                             <span style={{ fontWeight: 'bold', color: 'white', display: 'block', fontSize: '0.9rem' }}>{msg.author?.fullName}</span>
+                             <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{new Date(msg.createdAt).toLocaleDateString('ar-EG')}</span>
+                          </div>
+                          <img src={msg.author?.avatarUrl || "https://ui-avatars.com/api/?name=U"} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                       </div>
+                       <p style={{ color: 'rgba(255,255,255,0.8)', lineHeight: '1.6', textAlign: 'right', fontSize: '1rem' }}>{msg.text}</p>
+                    </div>
                  ))}
               </div>
            </div>
@@ -155,6 +188,14 @@ const NotebooksView = ({ onBack }) => {
         {notebooks.filter(nb => nb.isPublic).map(nb => (
           <div key={nb._id} onClick={() => setSelectedNotebook(nb)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
              <div style={{ width: '100px', height: '140px', background: nb.color || '#9333ea', borderRadius: '4px 12px 12px 4px', boxShadow: '0 15px 30px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', borderLeft: '3px solid rgba(255,255,255,0.1)' }}>
+                {(user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'moderator') && (
+                  <button 
+                    onClick={(e) => handleDeleteNotebook(e, nb._id)}
+                    style={{ position: 'absolute', top: '-10px', left: '-10px', background: '#EF4444', border: 'none', padding: '6px', borderRadius: '50%', color: 'white', cursor: 'pointer', zIndex: 5, boxShadow: '0 4px 10px rgba(239, 68, 68, 0.4)' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
                 <div style={{ width: '45px', height: '45px', borderRadius: '50%', border: '2px solid white', overflow: 'hidden', background: '#111' }}>
                    <img src={nb.owner?.avatarUrl || "https://ui-avatars.com/api/?name=U"} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>

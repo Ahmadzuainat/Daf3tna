@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useAppStore } from '../../store/useAppStore';
-import { ArrowRight, Quote } from 'lucide-react';
+import { ArrowRight, Quote, Trash2 } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
+import { toast } from 'sonner';
 
 const QuotesView = ({ onBack }) => {
-  const { quotes, fetchQuotes, addQuote } = useAppStore();
+  const { user: me } = useAuthStore();
+  const { quotes, fetchQuotes, addQuote, deleteQuote } = useAppStore();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ text: '', doctor: '', subject: '' });
   
@@ -11,9 +12,21 @@ const QuotesView = ({ onBack }) => {
   
   const handleAdd = async () => {
     if (!form.text.trim() || !form.doctor.trim()) return;
-    await addQuote(form.text, form.doctor, form.subject);
-    setForm({ text: '', doctor: '', subject: '' }); 
-    setShowAdd(false);
+    try {
+      await addQuote(form.text, form.doctor, form.subject);
+      setForm({ text: '', doctor: '', subject: '' }); 
+      setShowAdd(false);
+      toast.success('تمت إضافة الاقتباس بنجاح');
+    } catch(e) { toast.error('حدث خطأ أثناء الإضافة'); }
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('هل أنت متأكد من حذف هذا الاقتباس؟')) return;
+    try {
+      await deleteQuote(id);
+      toast.success('تم حذف الاقتباس');
+    } catch(e) { toast.error('فشل حذف الاقتباس'); }
   };
   
   const list = quotes.length > 0 ? quotes : [];
@@ -39,7 +52,15 @@ const QuotesView = ({ onBack }) => {
         {list.length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>لا توجد اقتباسات بعد</p>}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
           {list.map((q, idx) => (
-            <div key={q._id} style={{ background: idx%2===0?'linear-gradient(135deg,#DBEAFE,#BFDBFE)':'linear-gradient(135deg,#FEF3C7,#FDE68A)', color: '#1E3A8A', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 20px rgba(0,0,0,0.2)', transform: idx%2===0?'rotate(-1deg)':'rotate(1deg)' }}>
+            <div key={q._id} style={{ background: idx%2===0?'linear-gradient(135deg,#DBEAFE,#BFDBFE)':'linear-gradient(135deg,#FEF3C7,#FDE68A)', color: '#1E3A8A', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 20px rgba(0,0,0,0.2)', transform: idx%2===0?'rotate(-1deg)':'rotate(1deg)', position: 'relative' }}>
+              {(me?.role === 'superadmin' || me?.role === 'admin' || me?.role === 'moderator' || q.addedBy === me?._id) && (
+                <button 
+                  onClick={(e) => handleDelete(e, q._id)}
+                  style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '8px', borderRadius: '10px', color: '#EF4444', cursor: 'pointer' }}
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
               <Quote size={32} color={idx%2===0?'#3B82F6':'#D97706'} style={{ opacity: 0.3, marginBottom: '16px' }} />
               <p style={{ fontSize: '1.3rem', fontWeight: 'bold', lineHeight: '1.6', marginBottom: '24px' }}>"{q.text}"</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px dashed rgba(0,0,0,0.1)', paddingTop: '16px' }}>
