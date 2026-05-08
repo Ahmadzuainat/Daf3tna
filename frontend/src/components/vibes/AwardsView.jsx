@@ -62,10 +62,6 @@ const AwardsView = ({ onBack }) => {
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <Crown size={60} color="#F59E0B" style={{ marginBottom: '16px' }} />
           <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'white', textShadow: '0 4px 20px rgba(245, 158, 11, 0.5)' }}>أساطير الدفعة</h1>
-          <div style={{ background: '#F59E0B', color: 'black', padding: '10px', borderRadius: '12px', marginTop: '12px', fontWeight: 'bold' }}>
-            🛠️ فحص النظام: إذا كنت ترى هذا الشريط، فالتحديث قد وصل للسيرفر.
-          </div>
-          <p style={{ color: 'white', marginTop: '8px' }}>رتبتك الحالية: {me?.role || 'مستخدم غير مسجل'}</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '100px' }}>
@@ -100,19 +96,20 @@ const AwardsView = ({ onBack }) => {
                   {alreadyVoted && <span style={{ display: 'block', color: '#10B981', fontSize: '0.85rem', marginTop: '4px' }}>✓ صوتت بالفعل</span>}
                 </div>
 
-                {/* FORCE VISIBLE FOR DEBUGGING */}
-                <button 
-                  onClick={(e) => handleDelete(e, award._id)}
-                  style={{ 
-                    position: 'absolute', top: '10px', right: '10px',
-                    background: '#EF4444', border: 'none', 
-                    padding: '10px', borderRadius: '12px', color: 'white', cursor: 'pointer',
-                    zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)'
-                  }}
-                >
-                  <Trash2 size={20} strokeWidth={2.5} />
-                </button>
+                {(me?.role === 'superadmin' || me?.role === 'admin' || me?.role === 'moderator') && (
+                  <button 
+                    onClick={(e) => handleDelete(e, award._id)}
+                    style={{ 
+                      position: 'absolute', top: '10px', right: '10px',
+                      background: '#EF4444', border: 'none', 
+                      padding: '10px', borderRadius: '12px', color: 'white', cursor: 'pointer',
+                      zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)'
+                    }}
+                  >
+                    <Trash2 size={20} strokeWidth={2.5} />
+                  </button>
+                )}
               </div>
             );
           })}
