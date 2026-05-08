@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, RefreshCw, Users, Monitor, Trophy } from 'lucide-react';
-import { Chessboard } from 'react_chessboard';
+import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
