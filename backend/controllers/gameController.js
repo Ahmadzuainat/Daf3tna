@@ -69,9 +69,16 @@ export const joinGame = async (req, res) => {
     }
 
     await game.save();
+    
     const finalGame = await GameSession.findById(game._id)
       .populate('players.user', 'fullName profilePicture')
       .populate('currentTurn', 'fullName profilePicture');
+
+    // EMIT TO ROOM IMMEDIATELY
+    if (req.io) {
+      req.io.to(`game_${roomCode}`).emit('game:updated', finalGame);
+    }
+
     res.json(finalGame);
   } catch (error) {
     res.status(500).json({ message: error.message });
