@@ -13,31 +13,29 @@ const ChessGame = ({ onBack }) => {
   
   const [mode, setMode] = useState(null); // 'ai' or 'friend'
   const [game, setGame] = useState(null); // Backend session
-  const [chess, setChess] = useState(new Chess()); // Local chess logic
+  const [chess] = useState(new Chess()); // Keep instance stable
+  const [fen, setFen] = useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
   const [roomCode, setRoomCode] = useState('');
   const [inputCode, setInputCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [orientation, setOrientation] = useState('white');
   const [isAiThinking, setIsAiThinking] = useState(false);
-
+ 
   // Sync local chess with backend state
   useEffect(() => {
     if (game?.gameState?.fen) {
-      try {
-        const fen = game.gameState.fen === 'start' 
-          ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-          : game.gameState.fen;
-        setChess(new Chess(fen));
-      } catch (e) {
-        console.error('Chess FEN Error:', e);
-        setChess(new Chess());
-      }
+      const serverFen = game.gameState.fen === 'start' 
+        ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+        : game.gameState.fen;
+      
+      chess.load(serverFen);
+      setFen(chess.fen());
       
       // Determine orientation
       const me = game.players?.find(p => p.user?._id === user?._id);
-      if (me) setOrientation(me.symbol); // 'white' or 'black'
+      if (me) setOrientation(me.symbol);
     }
-  }, [game?.gameState?.fen, user?._id, game?.players]);
+  }, [game?.gameState?.fen, user?._id, game?.players, chess]);
 
   useEffect(() => {
     if (!socket) return;
@@ -103,19 +101,16 @@ const ChessGame = ({ onBack }) => {
       const randomIndex = Math.floor(Math.random() * moves.length);
       const move = moves[randomIndex];
       
-      const newChess = new Chess(chess.fen());
-      newChess.move(move);
-      setChess(newChess);
+      chess.move(move);
+      setFen(chess.fen());
       setIsAiThinking(false);
-    }, 1000);
+    }, 500);
   }
 
   function onDrop(sourceSquare, targetSquare) {
-    // 1. Identification
     const currentTurnId = game?.currentTurn?._id || game?.currentTurn;
     const userId = user?._id || user?.id;
     
-    // 2. Turn Validation
     if (mode === 'friend') {
       if (!game || game.status !== 'playing') return false;
       if (currentTurnId?.toString() !== userId?.toString()) {
@@ -127,9 +122,7 @@ const ChessGame = ({ onBack }) => {
     }
 
     try {
-      // 3. Try move locally
-      const newChess = new Chess(chess.fen());
-      const move = newChess.move({
+      const move = chess.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: 'q',
@@ -137,10 +130,9 @@ const ChessGame = ({ onBack }) => {
 
       if (move === null) return false;
 
-      // 4. Update UI immediately
-      setChess(newChess);
+      // Update UI immediately
+      setFen(chess.fen());
 
-      // 5. Handle next steps
       if (mode === 'ai') {
         setTimeout(makeRandomMove, 500);
       } else {
@@ -151,7 +143,6 @@ const ChessGame = ({ onBack }) => {
       }
       return true;
     } catch (error) {
-      console.error('Move error:', error);
       return false;
     }
   }
@@ -261,7 +252,7 @@ const ChessGame = ({ onBack }) => {
         {/* The Board */}
         <div style={{ width: '100%', maxWidth: '400px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', borderRadius: '8px', overflow: 'hidden' }}>
           <Chessboard 
-            position={chess.fen()} 
+            position={fen} 
             onPieceDrop={onDrop} 
             boardOrientation={orientation}
             customDarkSquareStyle={{ backgroundColor: '#1e293b' }}
