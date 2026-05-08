@@ -26,7 +26,7 @@ export const createGame = async (req, res) => {
       batchId: finalBatchId,
       players: [{ user: userId, symbol: gameType === 'tictactoe' ? 'X' : 'white', isReady: true }],
       status: 'waiting',
-      gameState: gameType === 'tictactoe' ? { board: Array(9).fill(null) } : { fen: 'start' }
+      gameState: gameType === 'tictactoe' ? { board: Array(9).fill(null) } : { fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' }
     });
 
     const populatedGame = await GameSession.findById(game._id).populate('players.user', 'fullName profilePicture');

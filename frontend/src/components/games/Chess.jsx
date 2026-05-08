@@ -22,13 +22,21 @@ const ChessGame = ({ onBack }) => {
   // Sync local chess with backend state
   useEffect(() => {
     if (game?.gameState?.fen) {
-      setChess(new Chess(game.gameState.fen));
+      try {
+        const fen = game.gameState.fen === 'start' 
+          ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+          : game.gameState.fen;
+        setChess(new Chess(fen));
+      } catch (e) {
+        console.error('Chess FEN Error:', e);
+        setChess(new Chess());
+      }
       
       // Determine orientation
-      const me = game.players.find(p => p.user._id === user._id);
+      const me = game.players?.find(p => p.user?._id === user?._id);
       if (me) setOrientation(me.symbol); // 'white' or 'black'
     }
-  }, [game?.gameState?.fen, user._id, game?.players]);
+  }, [game?.gameState?.fen, user?._id, game?.players]);
 
   useEffect(() => {
     if (!socket) return;
