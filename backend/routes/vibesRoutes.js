@@ -71,19 +71,12 @@ router.post('/awards/:id/vote', protect, async (req, res) => {
 
 router.delete('/awards/:id', protect, async (req, res) => {
   try {
-    const isSuperAdmin = req.user.role === 'superadmin';
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
     const award = await Award.findById(req.params.id);
     
     if (!award) return res.status(404).json({ message: 'الجائزة غير موجودة' });
 
-    // Only owner or Super Admin can delete
-    // Note: Award model doesn't have an 'author' or 'creator' field explicitly in the current view, 
-    // but typically it's the one who added the first vote or we check batch admin.
-    // However, the request specifically says Super Admin can delete ANY.
-    
-    if (!isSuperAdmin) {
-      // If we want to allow the person who nominated to delete, we'd need to know who that is.
-      // For now, let's stick to the Super Admin requirement.
+    if (!isModerator) {
       return res.status(403).json({ message: 'غير مصرح لك بحذف الجوائز' });
     }
 
