@@ -96,18 +96,19 @@ const AwardsView = ({ onBack }) => {
                   {alreadyVoted && <span style={{ display: 'block', color: '#10B981', fontSize: '0.85rem', marginTop: '4px' }}>✓ صوتت بالفعل</span>}
                 </div>
 
-                {me?.role === 'superadmin' && (
+                {(me?.role === 'superadmin' || me?.role === 'admin') && (
                   <button 
                     onClick={(e) => handleDelete(e, award._id)}
                     style={{ 
-                      background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', 
-                      padding: '10px', borderRadius: '12px', color: '#EF4444', cursor: 'pointer',
-                      zIndex: 10, transition: 'all 0.2s'
+                      position: 'absolute', top: '12px', left: '12px',
+                      background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', 
+                      padding: '8px', borderRadius: '12px', color: '#EF4444', cursor: 'pointer',
+                      zIndex: 20, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
                   >
-                    <Trash2 size={20} />
+                    <Trash2 size={18} />
                   </button>
                 )}
               </div>
