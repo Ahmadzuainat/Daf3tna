@@ -62,6 +62,9 @@ const AwardsView = ({ onBack }) => {
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <Crown size={60} color="#F59E0B" style={{ marginBottom: '16px' }} />
           <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'white', textShadow: '0 4px 20px rgba(245, 158, 11, 0.5)' }}>أساطير الدفعة</h1>
+          {(me?.role === 'superadmin' || me?.role === 'admin') && (
+            <p style={{ color: '#10B981', fontSize: '0.8rem', marginTop: '8px' }}>وضع المسؤول نشط ({me.role})</p>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '100px' }}>
@@ -100,15 +103,14 @@ const AwardsView = ({ onBack }) => {
                   <button 
                     onClick={(e) => handleDelete(e, award._id)}
                     style={{ 
-                      position: 'absolute', top: '12px', left: '12px',
-                      background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', 
-                      padding: '8px', borderRadius: '12px', color: '#EF4444', cursor: 'pointer',
-                      zIndex: 20, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      position: 'absolute', top: '10px', left: '10px',
+                      background: '#EF4444', border: 'none', 
+                      padding: '12px', borderRadius: '14px', color: 'white', cursor: 'pointer',
+                      zIndex: 100, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={22} strokeWidth={2.5} />
                   </button>
                 )}
               </div>
