@@ -2,20 +2,85 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:daf3tna/core/theme/app_theme.dart';
-// import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:daf3tna/core/services/socket_service.dart';
+import 'package:daf3tna/features/games/data/game_repository.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart'; // To get current user
 
-class TicTacToeView extends StatefulWidget {
+class TicTacToeView extends ConsumerStatefulWidget {
   const TicTacToeView({super.key});
 
   @override
-  State<TicTacToeView> createState() => _TicTacToeViewState();
+  ConsumerState<TicTacToeView> createState() => _TicTacToeViewState();
 }
 
-class _TicTacToeViewState extends State<TicTacToeView> {
-  String? mode; // 'ai', 'friend'
-  List<String?> board = List.filled(9, null);
-  String turn = 'X';
-  String? winner;
+class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
+  String? mode; 
+  Map<String, dynamic>? gameData;
+  String? roomCode;
+  final TextEditingController _codeController = TextEditingController();
+  bool loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _listenToSocket();
+    });
+  }
+
+  void _listenToSocket() {
+    final socket = ref.read(socketServiceProvider).socket;
+    
+    socket.on('game:init', (data) {
+      if (mounted) setState(() => gameData = data);
+    });
+
+    socket.on('game:updated', (data) {
+      if (mounted) setState(() => gameData = data);
+    });
+
+    socket.on('game:error', (data) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
+    });
+  }
+
+  Future<void> _createRoom() async {
+    setState(() => loading = true);
+    try {
+      final res = await ref.read(gameRepositoryProvider).createGame('tictactoe');
+      setState(() {
+        gameData = res.data;
+        roomCode = res.data['roomCode'];
+      });
+      ref.read(socketServiceProvider).joinGame(roomCode!);
+    } catch (e) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل إنشاء الغرفة')));
+    } finally {
+      setState(() => loading = false);
+    }
+  }
+
+  Future<void> _joinRoom() async {
+    if (_codeController.text.isEmpty) return;
+    setState(() => loading = true);
+    try {
+      final res = await ref.read(gameRepositoryProvider).joinGame(_codeController.text.toUpperCase());
+      setState(() {
+        gameData = res.data;
+        roomCode = res.data['roomCode'];
+      });
+      ref.read(socketServiceProvider).joinGame(roomCode!);
+    } catch (e) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الغرفة غير موجودة')));
+    } finally {
+      setState(() => loading = false);
+    }
+  }
+
+  void _makeMove(int index) {
+    if (gameData?['status'] != 'playing') return;
+    ref.read(socketServiceProvider).makeMove(roomCode!, {'index': index});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,12 +91,12 @@ class _TicTacToeViewState extends State<TicTacToeView> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowRight, color: Colors.white),
-          onPressed: () => mode == null ? Navigator.pop(context) : setState(() => mode = null),
+          onPressed: () => Navigator.pop(context),
         ),
-        title: Text(mode == null ? 'Tic Tac Toe' : (mode == 'ai' ? 'ضد الكمبيوتر' : 'لعب جماعي'), style: const TextStyle(color: Colors.white)),
+        title: const Text('Tic Tac Toe', style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
-      body: mode == null ? _buildModeSelection() : _buildGameBoard(),
+      body: mode == null ? _buildModeSelection() : (mode == 'friend' && gameData == null ? _buildFriendSetup() : _buildGameBoard()),
     );
   }
 
@@ -41,54 +106,51 @@ class _TicTacToeViewState extends State<TicTacToeView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildModeButton(
-            title: 'اللعب ضد الكمبيوتر',
-            subtitle: 'تحدى الذكاء الاصطناعي',
-            icon: LucideIcons.monitor,
-            color: Colors.blue,
-            onTap: () => setState(() => mode = 'ai'),
-          ),
+          _modeButton('ضد الكمبيوتر', 'AI Mode', LucideIcons.monitor, Colors.blue, () => setState(() => mode = 'ai')),
           const SizedBox(height: 20),
-          _buildModeButton(
-            title: 'اللعب مع صديق',
-            subtitle: 'تحدى صديقك في الوقت الفعلي',
-            icon: LucideIcons.users,
-            color: Colors.purple,
-            onTap: () => setState(() => mode = 'friend'),
-          ),
+          _modeButton('ضد صديق', 'Multiplayer', LucideIcons.users, Colors.purple, () => setState(() => mode = 'friend')),
         ],
       ),
     );
   }
 
-  Widget _buildModeButton({required String title, required String subtitle, required IconData icon, required Color color, required VoidCallback onTap}) {
+  Widget _modeButton(String t, String s, IconData i, Color c, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withOpacity(0.1))),
+        child: Row(children: [
+          Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(12)), child: Icon(i, color: Colors.white)),
+          const SizedBox(width: 20),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(t, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(s, style: TextStyle(color: Colors.white.withOpacity(0.5))),
+          ])
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildFriendSetup() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
-              child: Icon(icon, color: Colors.white, size: 28),
+            ElevatedButton(onPressed: loading ? null : _createRoom, child: const Text('أنشئ غرفة جديدة')),
+            const SizedBox(height: 30),
+            const Text('أو ادخل رمز الغرفة', style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 15),
+            TextField(
+              controller: _codeController,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              decoration: const InputDecoration(hintText: 'CODE', hintStyle: TextStyle(color: Colors.white24)),
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
-                ],
-              ),
-            ),
+            const SizedBox(height: 15),
+            ElevatedButton(onPressed: loading ? null : _joinRoom, child: const Text('دخول')),
           ],
         ),
       ),
@@ -96,141 +158,54 @@ class _TicTacToeViewState extends State<TicTacToeView> {
   }
 
   Widget _buildGameBoard() {
+    if (gameData?['status'] == 'waiting') {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('بانتظار الصديق...', style: TextStyle(color: Colors.white, fontSize: 20)),
+            const SizedBox(height: 20),
+            Text(roomCode ?? '', style: const TextStyle(color: Colors.blue, fontSize: 48, fontWeight: FontWeight.bold, letterSpacing: 5)),
+          ],
+        ),
+      );
+    }
+
+    final board = List<String?>.from(gameData?['gameState']?['board'] ?? List.filled(9, null));
     return Column(
       children: [
-        const SizedBox(height: 40),
+        const SizedBox(height: 30),
         _buildTurnIndicator(),
-        const SizedBox(height: 40),
-        _buildGrid(),
-        if (winner != null) _buildWinnerCard(),
+        const SizedBox(height: 30),
+        _buildGrid(board),
+        if (gameData?['status'] == 'finished') _buildWinnerSection(),
       ],
     );
   }
 
   Widget _buildTurnIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _playerCard('X', 'أنت', turn == 'X'),
-        const SizedBox(width: 40),
-        _playerCard('O', mode == 'ai' ? 'الكمبيوتر' : 'الخصم', turn == 'O'),
-      ],
-    );
+    return const Text('الدور الحالي', style: TextStyle(color: Colors.white70));
   }
 
-  Widget _playerCard(String symbol, String label, bool isActive) {
+  Widget _buildGrid(List<String?> board) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        border: Border.all(color: isActive ? (symbol == 'X' ? Colors.blue : Colors.red) : Colors.white.withOpacity(0.1)),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Text(symbol, style: TextStyle(color: symbol == 'X' ? Colors.blue : Colors.red, fontSize: 24, fontWeight: FontWeight.bold)),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGrid() {
-    return Container(
-      width: 350,
-      height: 350,
-      padding: const EdgeInsets.all(12),
+      width: 350, height: 350,
+      padding: const EdgeInsets.all(16),
       child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 12, mainAxisSpacing: 12),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10),
         itemCount: 9,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () => _handleMove(index),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: Center(
-                child: board[index] == null
-                    ? null
-                    : (board[index] == 'X'
-                        ? const Icon(LucideIcons.x, size: 48, color: Colors.blue)
-                        : const Icon(LucideIcons.circle, size: 40, color: Colors.red)),
-              ),
-            ),
-          );
-        },
+        itemBuilder: (c, i) => GestureDetector(
+          onTap: () => _makeMove(i),
+          child: Container(
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+            child: Center(child: board[i] == null ? null : (board[i] == 'X' ? const Icon(LucideIcons.x, color: Colors.blue, size: 40) : const Icon(LucideIcons.circle, color: Colors.red, size: 35))),
+          ),
+        ),
       ),
     );
   }
 
-  void _handleMove(int index) {
-    if (board[index] != null || winner != null) return;
-    setState(() {
-      board[index] = 'X';
-      if (_checkWin('X')) {
-        winner = 'X';
-      } else if (!board.contains(null)) {
-        winner = 'draw';
-      } else {
-        if (mode == 'ai') {
-          _aiMove();
-        } else {
-          turn = 'O';
-        }
-      }
-    });
-  }
-
-  void _aiMove() {
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
-      List<int> empty = [];
-      for (int i = 0; i < 9; i++) {
-        if (board[i] == null) empty.add(i);
-      }
-      if (empty.isNotEmpty) {
-        setState(() {
-          int move = empty[0]; // Simple AI
-          board[move] = 'O';
-          if (_checkWin('O')) {
-            winner = 'O';
-          } else if (!board.contains(null)) {
-            winner = 'draw';
-          }
-        });
-      }
-    });
-  }
-
-  bool _checkWin(String s) {
-    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-    for (var l in lines) {
-      if (board[l[0]] == s && board[l[1]] == s && board[l[2]] == s) return true;
-    }
-    return false;
-  }
-
-  Widget _buildWinnerCard() {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        const Icon(LucideIcons.trophy, color: Colors.amber, size: 60),
-        Text(winner == 'draw' ? 'تعادل!' : (winner == 'X' ? 'لقد فزت! 🎉' : 'خسرت! 🤖'),
-            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: () => setState(() {
-            board = List.filled(9, null);
-            winner = null;
-            turn = 'X';
-          }),
-          child: const Text('العب مرة أخرى'),
-        )
-      ],
-    );
+  Widget _buildWinnerSection() {
+    return const Text('انتهت اللعبة!', style: TextStyle(color: Colors.amber, fontSize: 24, fontWeight: FontWeight.bold));
   }
 }

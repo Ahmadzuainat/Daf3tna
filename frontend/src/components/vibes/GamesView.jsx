@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ArrowRight, Trophy, Users, Monitor, Gamepad2, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TicTacToe from '../games/TicTacToe';
-// import Chess from '../games/Chess';
+import ChessGame from '../games/Chess';
 // import Ludo from '../games/Ludo';
 
 const GamesView = ({ onBack }) => {
@@ -23,7 +23,7 @@ const GamesView = ({ onBack }) => {
       desc: 'تحدى ذكاء أصدقائك في معركة الملوك', 
       icon: Trophy, 
       color: 'linear-gradient(135deg, #10B981, #065F46)',
-      component: null // To be added
+      component: ChessGame
     },
     { 
       id: 'ludo', 
