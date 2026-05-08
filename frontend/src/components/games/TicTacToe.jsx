@@ -29,12 +29,14 @@ const TicTacToe = ({ onBack }) => {
     socket.on('game:updated', handleUpdate);
     socket.on('game:error', handleError);
 
+    // Re-join room if socket reconnects while waiting or playing
+    if (game?.roomCode) {
+      socket.emit('game:joinRoom', { roomCode: game.roomCode });
+    }
+
     return () => {
       socket.off('game:updated', handleUpdate);
       socket.off('game:error', handleError);
-      if (game?.roomCode) {
-        socket.emit('game:leave', { roomCode: game.roomCode });
-      }
     };
   }, [socket, game?.roomCode]);
 
@@ -252,6 +254,13 @@ const TicTacToe = ({ onBack }) => {
             <div style={{ color: '#3B82F6', fontSize: '2.5rem', fontWeight: 'bold', letterSpacing: '4px' }}>{game.roomCode}</div>
           </div>
           <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '24px' }}>شارك هذا الرمز مع صديقك ليبدأ التحدي</p>
+          
+          <button 
+            onClick={() => socket.emit('game:joinRoom', { roomCode: game.roomCode })}
+            style={{ marginTop: '20px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', padding: '8px 16px', borderRadius: '12px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px', margin: '20px auto 0' }}
+          >
+            <RefreshCw size={14} /> تحديث الحالة يدوياً
+          </button>
         </div>
       )}
 

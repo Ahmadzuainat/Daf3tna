@@ -41,13 +41,18 @@ const ChessGame = ({ onBack }) => {
     });
     socket.on('game:error', ({ message }) => toast.error(message));
 
+    // Re-join room if socket reconnects
+    if (game?.roomCode) {
+      socket.emit('game:joinRoom', { roomCode: game.roomCode });
+    }
+
     return () => {
       socket.off('game:init');
       socket.off('game:updated');
       socket.off('game:playerStatus');
       socket.off('game:error');
     };
-  }, [socket, game?.players]);
+  }, [socket, game?.roomCode]);
 
   const createRoom = async () => {
     setLoading(true);

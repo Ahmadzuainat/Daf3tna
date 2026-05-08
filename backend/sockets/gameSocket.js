@@ -5,28 +5,35 @@ const registerGameHandlers = (io, socket) => {
   
   socket.on('game:joinRoom', async ({ roomCode }) => {
     try {
-      const game = await GameSession.findOne({ roomCode })
-        .populate('players.user', 'fullName avatarUrl');
+      if (!roomCode) return;
+      const roomName = `game_${roomCode.toUpperCase()}`;
       
-      if (!game) return socket.emit('game:error', { message: 'الغرفة غير موجودة' });
+      const game = await GameSession.findOne({ roomCode: roomCode.toUpperCase() })
+        .populate('players.user', 'fullName profilePicture');
+      
+      if (!game) {
+        console.log(`❌ Room ${roomCode} not found for user ${socket.userId}`);
+        return socket.emit('game:error', { message: 'الغرفة غير موجودة' });
+      }
 
-      socket.join(`game_${roomCode}`);
+      socket.join(roomName);
+      console.log(`🔌 Socket ${socket.id} (User: ${socket.userId}) joined room: ${roomName}`);
       
       // Update player socket ID in the session
-      const playerIndex = game.players.findIndex(p => p.user._id.toString() === socket.userId);
+      const playerIndex = game.players.findIndex(p => p.user?._id?.toString() === socket.userId);
       if (playerIndex !== -1) {
         game.players[playerIndex].socketId = socket.id;
         await game.save();
       }
 
-      console.log(`🎮 User ${socket.userId} joined game room: ${roomCode}`);
-      
-      // Notify everyone in the room with the latest game state
+      // Populate again to be sure
       const populatedGame = await GameSession.findById(game._id)
         .populate('players.user', 'fullName profilePicture')
         .populate('currentTurn', 'fullName profilePicture');
 
-      io.to(`game_${roomCode}`).emit('game:updated', populatedGame);
+      // BROADCAST TO EVERYONE IN THE ROOM
+      io.to(roomName).emit('game:updated', populatedGame);
+      console.log(`📢 Broadcasted update to room: ${roomName}`);
     } catch (error) {
       console.error('Join room error:', error);
     }
