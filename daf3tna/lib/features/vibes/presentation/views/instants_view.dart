@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -9,6 +10,7 @@ import 'package:daf3tna/core/utils/toast_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:daf3tna/features/auth/presentation/auth_provider.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
 import 'dart:ui';
 
 class InstantsView extends ConsumerStatefulWidget {
@@ -369,7 +371,7 @@ class _InstantFullScreenViewState extends ConsumerState<InstantFullScreenView> {
                     ),
                     child: Row(
                       children: [
-                        Icon(LucideIcons.heart, color: isLiked ? Colors.red : Colors.white, fill: isLiked ? Colors.red : null),
+                        Icon(LucideIcons.heart, color: isLiked ? Colors.red : Colors.white, fill: isLiked ? 1.0 : 0.0),
                         const SizedBox(width: 8),
                         Text(
                           '${(_currentItem['likes'] as List?)?.length ?? 0}',

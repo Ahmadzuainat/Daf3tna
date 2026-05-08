@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { ArrowRight, Quote, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useAppStore } from '../../store/useAppStore';
 import { toast } from 'sonner';
 
 const QuotesView = ({ onBack }) => {
@@ -29,7 +31,7 @@ const QuotesView = ({ onBack }) => {
     } catch(e) { toast.error('فشل حذف الاقتباس'); }
   };
   
-  const list = quotes.length > 0 ? quotes : [];
+  const list = Array.isArray(quotes) ? quotes : [];
   
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-dark)', display: 'flex', flexDirection: 'column' }}>

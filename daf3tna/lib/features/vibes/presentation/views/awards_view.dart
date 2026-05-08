@@ -8,6 +8,7 @@ import 'package:daf3tna/core/utils/toast_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:daf3tna/features/search/data/search_repository.dart';
 import 'package:daf3tna/features/auth/presentation/auth_provider.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
 
 class AwardsView extends ConsumerStatefulWidget {
   final List<Color> colors;
@@ -420,7 +421,7 @@ class _VoteButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(LucideIcons.star, color: isVoted ? Colors.green : Colors.amber, size: 24, fill: isVoted ? (isVoted ? Colors.green : Colors.amber) : null),
+            Icon(LucideIcons.star, color: isVoted ? Colors.green : Colors.amber, size: 24, fill: isVoted ? 1.0 : 0.0),
             const SizedBox(height: 4),
             Text(
               '$count', 

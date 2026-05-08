@@ -5,6 +5,8 @@ import 'package:daf3tna/core/theme/app_theme.dart';
 import 'package:daf3tna/features/vibes/data/vibes_repository.dart';
 import 'package:daf3tna/features/vibes/presentation/vibes_provider.dart';
 import 'package:daf3tna/core/utils/toast_service.dart';
+import 'package:daf3tna/features/auth/presentation/auth_provider.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
 
 class QuotesView extends ConsumerStatefulWidget {
   final List<Color> colors;
@@ -31,6 +33,7 @@ class _QuotesViewState extends ConsumerState<QuotesView> {
   @override
   Widget build(BuildContext context) {
     final quotesAsync = ref.watch(quotesProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Column(
       children: [
@@ -165,6 +168,10 @@ class _QuotesViewState extends ConsumerState<QuotesView> {
 
   Widget _buildQuoteCard(dynamic item, int index) {
     final bool isBlue = index % 2 == 0;
+    final user = ref.watch(currentUserProvider);
+    final isAdmin = ['superadmin', 'admin', 'moderator'].contains(user?.role);
+    final isOwner = item['addedBy'] == user?.id;
+
     return Transform.rotate(
       angle: isBlue ? -0.02 : 0.02,
       child: Container(
@@ -188,10 +195,20 @@ class _QuotesViewState extends ConsumerState<QuotesView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Icon(
-              LucideIcons.quote, 
-              color: (isBlue ? Colors.blue : Colors.orange).withValues(alpha: 0.3), 
-              size: 32
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(
+                  LucideIcons.quote, 
+                  color: (isBlue ? Colors.blue : Colors.orange).withValues(alpha: 0.3), 
+                  size: 32
+                ),
+                if (isAdmin || isOwner)
+                  IconButton(
+                    onPressed: () => _handleDelete(item['_id']),
+                    icon: const Icon(LucideIcons.trash2, color: Colors.redAccent, size: 20),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             Text(
@@ -240,6 +257,34 @@ class _QuotesViewState extends ConsumerState<QuotesView> {
       ToastService.showSuccess(context, 'تمت إضافة الاقتباس بنجاح! ✨');
     } catch (_) {
       ToastService.showError(context, 'فشل في إضافة الاقتباس');
+    }
+  }
+
+  void _handleDelete(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('حذف الاقتباس', style: TextStyle(color: Colors.white)),
+        content: const Text('هل أنت متأكد من حذف هذا الاقتباس؟', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(vibesRepositoryProvider).deleteQuote(id);
+        ref.invalidate(quotesProvider);
+        ToastService.showSuccess(context, 'تم حذف الاقتباس');
+      } catch (_) {
+        ToastService.showError(context, 'فشل حذف الاقتباس');
+      }
     }
   }
 }

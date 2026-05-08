@@ -10,6 +10,7 @@ import ConfessionsView from '../vibes/ConfessionsView';
 import TimeCapsuleView from '../vibes/TimeCapsuleView';
 import InstantsView from '../vibes/InstantsView';
 import NotebooksView from '../vibes/NotebooksView';
+import GamesView from '../vibes/GamesView';
 
 const VibesTab = ({ onExitFullScreen, activeVibe, setActiveVibe }) => {
   
@@ -20,6 +21,7 @@ const VibesTab = ({ onExitFullScreen, activeVibe, setActiveVibe }) => {
   if (activeVibe === 'quotes') return <QuotesView onBack={() => setActiveVibe(null)} />;
   if (activeVibe === 'confessions') return <ConfessionsView onBack={() => setActiveVibe(null)} />;
   if (activeVibe === 'time_capsule') return <TimeCapsuleView onBack={() => setActiveVibe(null)} />;
+  if (activeVibe === 'games') return <GamesView onBack={() => setActiveVibe(null)} />;
   
   const banners = [
     { id: 'instants', title: 'اللقطات الفورية', desc: 'شارك لحظتك العفوية (تختفي بعد المشاهدة)', icon: Zap, color: 'linear-gradient(135deg, #F97316, #EC4899)' },
@@ -29,6 +31,7 @@ const VibesTab = ({ onExitFullScreen, activeVibe, setActiveVibe }) => {
     { id: 'quotes', title: 'اقتباسات الدكاترة', desc: 'أجمل وأغرب ما قيل في المحاضرات', icon: Quote, color: 'linear-gradient(135deg, #3B82F6, #1E3A8A)' },
     { id: 'confessions', title: 'حائط المجهول', desc: 'اعترف وفضفض براحتك وبسرية تامة', icon: Ghost, color: 'linear-gradient(135deg, #D946EF, #701A75)' },
     { id: 'time_capsule', title: 'كبسولة الزمن', desc: 'ذكريات سرية مقفلة حتى يوم التخرج', icon: Lock, color: 'linear-gradient(135deg, #10B981, #065F46)' },
+    { id: 'games', title: 'الألعاب (Games)', desc: 'العب مع أصدقائك في تحديات فورية ومسلية', icon: Zap, color: 'linear-gradient(135deg, #8B5CF6, #4C1D95)' },
   ];
 
   return (

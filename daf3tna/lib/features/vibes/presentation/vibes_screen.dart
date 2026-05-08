@@ -144,7 +144,7 @@ class VibesScreen extends ConsumerWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        shadows: [
+        boxShadow: [
           BoxShadow(
             color: (banner['colors'] as List<Color>).first.withValues(alpha: 0.2),
             blurRadius: 15,

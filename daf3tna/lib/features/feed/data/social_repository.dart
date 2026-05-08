@@ -64,4 +64,8 @@ class SocialRepository {
       rethrow;
     }
   }
+
+  Future<void> deleteStory(String id) async {
+    await _dio.delete('/stories/$id');
+  }
 }

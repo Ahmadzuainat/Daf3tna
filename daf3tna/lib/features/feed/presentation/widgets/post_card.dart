@@ -39,7 +39,7 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _PostHeader(user: post.user),
+            _PostHeader(user: post.user, postId: post.id),
             if (post.mediaUrls.isNotEmpty) _PostMedia(url: post.mediaUrls.first),
             IntrinsicHeight(
               child: Row(
@@ -83,12 +83,13 @@ class PostCard extends StatelessWidget {
   }
 }
 
-class _PostHeader extends StatelessWidget {
+class _PostHeader extends ConsumerWidget {
   final dynamic user;
-  const _PostHeader({required this.user});
+  final String postId;
+  const _PostHeader({required this.user, required this.postId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -97,7 +98,7 @@ class _PostHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          const Icon(LucideIcons.moreVertical, color: AppColors.textDim, size: 18),
+          _PostOptions(postId: postId),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -140,6 +141,65 @@ class _PostHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PostOptions extends ConsumerWidget {
+  final String postId;
+  const _PostOptions({required this.postId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final isAdmin = ['superadmin', 'admin', 'moderator'].contains(user?.role);
+    // For isOwner, we'd need the post owner id. Let's just focus on admin for now as requested.
+    
+    if (!isAdmin) return const Icon(LucideIcons.moreVertical, color: AppColors.textDim, size: 18);
+
+    return PopupMenuButton<String>(
+      icon: const Icon(LucideIcons.moreVertical, color: AppColors.textDim, size: 18),
+      color: AppColors.surface,
+      onSelected: (value) async {
+        if (value == 'delete') {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              color: AppColors.surface,
+              title: const Text('حذف المنشور', style: TextStyle(color: Colors.white)),
+              content: const Text('هل أنت متأكد من حذف هذا المنشور؟', style: TextStyle(color: Colors.white70)),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true) {
+            try {
+              await ref.read(feedRepositoryProvider).deletePost(postId);
+              ref.read(feedProvider.notifier).fetchPosts();
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف المنشور')));
+            } catch (_) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل حذف المنشور')));
+            }
+          }
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(LucideIcons.trash2, color: Colors.redAccent, size: 18),
+              SizedBox(width: 8),
+              Text('حذف', style: TextStyle(color: Colors.redAccent)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

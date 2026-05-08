@@ -7,6 +7,8 @@ import 'package:daf3tna/features/vibes/presentation/vibes_provider.dart';
 import 'package:daf3tna/core/utils/toast_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:daf3tna/features/auth/presentation/auth_provider.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
+import 'package:intl/intl.dart' as intl;
 
 class NotebooksView extends ConsumerStatefulWidget {
   final List<Color> colors;
@@ -269,7 +271,7 @@ class _NotebooksViewState extends ConsumerState<NotebooksView> {
               ),
               const SizedBox(height: 20),
               // Messages List
-              ...messages.map((msg) => _buildMessageCard(msg)),
+              ...messages.map((msg) => _buildMessageCard(msg, nb, user, isOwner)),
               const SizedBox(height: 100),
             ],
           ),
@@ -279,7 +281,7 @@ class _NotebooksViewState extends ConsumerState<NotebooksView> {
     );
   }
 
-  Widget _buildMessageCard(dynamic msg) {
+  Widget _buildMessageCard(dynamic msg, dynamic nb, dynamic user, bool isOwner) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -292,8 +294,13 @@ class _NotebooksViewState extends ConsumerState<NotebooksView> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              if (msg['author']?['_id'] == user?.id || isOwner || ['superadmin', 'admin', 'moderator'].contains(user?.role))
+                IconButton(
+                  onPressed: () => _handleDeleteMessage(nb['_id'], msg['_id']),
+                  icon: const Icon(LucideIcons.trash2, color: Colors.redAccent, size: 16),
+                ),
+              const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -378,6 +385,67 @@ class _NotebooksViewState extends ConsumerState<NotebooksView> {
     setState(() => _isSigning = false);
   }
 
+  void _handleDeleteNotebook(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('حذف الدفتر', style: TextStyle(color: Colors.white)),
+        content: const Text('هل أنت متأكد من حذف هذا الدفتر بالكامل؟', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(vibesRepositoryProvider).deleteNotebook(id);
+        ref.invalidate(notebookProvider);
+        ToastService.showSuccess(context, 'تم حذف الدفتر');
+      } catch (_) {
+        ToastService.showError(context, 'فشل حذف الدفتر');
+      }
+    }
+  }
+
+  void _handleDeleteMessage(String notebookId, String msgId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('حذف الرسالة', style: TextStyle(color: Colors.white)),
+        content: const Text('هل أنت متأكد من حذف هذه الرسالة؟', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(vibesRepositoryProvider).deleteNotebookMessage(notebookId, msgId);
+        ref.invalidate(notebookProvider);
+        if (_selectedNotebook != null) {
+          setState(() {
+            _selectedNotebook['messages'] = (_selectedNotebook['messages'] as List).where((m) => m['_id'] != msgId).toList();
+          });
+        }
+        ToastService.showSuccess(context, 'تم حذف الرسالة');
+      } catch (_) {
+        ToastService.showError(context, 'فشل حذف الرسالة');
+      }
+    }
+  }
+
   void _openSettings() {
     // Navigate to settings or show dialog
     ToastService.showInfo(context, 'إعدادات الدفتر قيد التحسين...');
@@ -393,4 +461,3 @@ class _NotebooksViewState extends ConsumerState<NotebooksView> {
     return const Color(0xFF1E3A8A);
   }
 }
-import 'package:intl/intl.dart' as intl;

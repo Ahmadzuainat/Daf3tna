@@ -25,6 +25,8 @@ import vibesRoutes from './routes/vibesRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import gameRoutes from './routes/gameRoutes.js';
+import registerGameHandlers from './sockets/gameSocket.js';
 
 dotenv.config();
 
@@ -59,6 +61,7 @@ app.use('/api/vibes', vibesRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/games', gameRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,6 +142,9 @@ io.on('connection', (socket) => {
       socket.to(message.receiver).emit('dm:newNotification', message);
     }
   });
+
+  // GAMES LOGIC
+  registerGameHandlers(io, socket);
 
   // GLOBAL EMERGENCY ALERT (Superadmin only)
   socket.on('admin:broadcastAlert', (alertData) => {

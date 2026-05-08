@@ -98,4 +98,24 @@ class VibesRepository {
   Future<void> deleteAward(String id) async {
     await _dio.delete('/vibes/awards/$id');
   }
+  
+  Future<void> deleteQuote(String id) async {
+    await _dio.delete('/vibes/quotes/$id');
+  }
+
+  Future<void> deleteConfession(String id) async {
+    await _dio.delete('/vibes/confessions/$id');
+  }
+
+  Future<void> deleteNotebook(String id) async {
+    await _dio.delete('/vibes/notebooks/$id');
+  }
+
+  Future<void> deleteNotebookMessage(String notebookId, String messageId) async {
+    await _dio.delete('/vibes/notebooks/$notebookId/messages/$messageId');
+  }
+
+  Future<void> deleteTimeCapsule(String id) async {
+    await _dio.delete('/vibes/time-capsules/$id');
+  }
 }

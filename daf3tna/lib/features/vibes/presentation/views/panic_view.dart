@@ -8,6 +8,7 @@ import 'package:daf3tna/core/utils/toast_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:daf3tna/features/auth/presentation/auth_provider.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
 
 class PanicView extends ConsumerStatefulWidget {
   final List<Color> colors;
@@ -133,7 +134,7 @@ class _PanicViewState extends ConsumerState<PanicView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (isOwner)
+                    if (isOwner || ['superadmin', 'admin', 'moderator'].contains(ref.watch(currentUserProvider)?.role))
                       IconButton(
                         icon: const Icon(LucideIcons.trash2, color: Colors.red, size: 18),
                         onPressed: () => _confirmDelete(item['_id']),

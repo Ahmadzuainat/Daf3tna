@@ -25,4 +25,12 @@ class FeedRepository {
       rethrow;
     }
   }
+
+  Future<void> deletePost(String id) async {
+    await _dio.delete('/posts/$id');
+  }
+
+  Future<void> deleteComment(String postId, String commentId) async {
+    await _dio.delete('/posts/$postId/comments/$commentId');
+  }
 }

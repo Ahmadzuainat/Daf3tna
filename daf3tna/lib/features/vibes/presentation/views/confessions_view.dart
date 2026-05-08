@@ -5,6 +5,7 @@ import 'package:daf3tna/core/theme/app_theme.dart';
 import 'package:daf3tna/features/vibes/data/vibes_repository.dart';
 import 'package:daf3tna/features/vibes/presentation/vibes_provider.dart';
 import 'package:daf3tna/core/utils/toast_service.dart';
+import 'package:daf3tna/features/auth/presentation/auth_provider.dart';
 import 'package:intl/intl.dart' as intl;
 
 class ConfessionsView extends ConsumerStatefulWidget {
@@ -127,14 +128,24 @@ class _ConfessionsViewState extends ConsumerState<ConfessionsView> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'ANONYMOUS',
-                style: TextStyle(color: Color(0xFFD946EF), fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 10),
+              if (['superadmin', 'admin', 'moderator'].contains(ref.watch(authProvider).user?.role))
+                IconButton(
+                  onPressed: () => _handleDelete(item['_id']),
+                  icon: const Icon(LucideIcons.trash2, color: Colors.redAccent, size: 20),
+                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'ANONYMOUS',
+                    style: TextStyle(color: Color(0xFFD946EF), fontWeight: FontWeight.bold, letterSpacing: 2, fontSize: 10),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(LucideIcons.ghost, size: 16, color: Color(0xFFD946EF)),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Icon(LucideIcons.ghost, size: 16, color: Color(0xFFD946EF)),
             ],
           ),
           const SizedBox(height: 16),
@@ -218,5 +229,33 @@ class _ConfessionsViewState extends ConsumerState<ConfessionsView> {
       ToastService.showError(context, 'فشل في نشر الاعتراف');
     }
     setState(() => _isSending = false);
+  }
+
+  void _handleDelete(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('حذف الاعتراف', style: TextStyle(color: Colors.white)),
+        content: const Text('هل أنت متأكد من حذف هذا الاعتراف؟', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(vibesRepositoryProvider).deleteConfession(id);
+        ref.invalidate(confessionsProvider);
+        ToastService.showSuccess(context, 'تم حذف الاعتراف');
+      } catch (_) {
+        ToastService.showError(context, 'فشل حذف الاعتراف');
+      }
+    }
   }
 }
