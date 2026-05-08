@@ -104,13 +104,19 @@ const TicTacToe = ({ onBack }) => {
 
     // AI Turn (O)
     setTimeout(() => {
-      const emptyIndices = newBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
-      const aiIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-      newBoard[aiIndex] = 'O';
-      setAiBoard(newBoard);
-      const winO = checkWinner(newBoard);
-      if (winO) setAiWinner(winO);
-    }, 500);
+      setAiBoard(currentBoard => {
+        const newBoard = [...currentBoard];
+        const emptyIndices = newBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
+        if (emptyIndices.length === 0) return currentBoard;
+
+        const aiIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+        newBoard[aiIndex] = 'O';
+        
+        const winO = checkWinner(newBoard);
+        if (winO) setAiWinner(winO);
+        return newBoard;
+      });
+    }, 600);
   };
 
   const checkWinner = (board) => {
