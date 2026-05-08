@@ -18,6 +18,7 @@ const ChessGame = ({ onBack }) => {
   const [inputCode, setInputCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [orientation, setOrientation] = useState('white');
+  const [isAiThinking, setIsAiThinking] = useState(false);
 
   // Sync local chess with backend state
   useEffect(() => {
@@ -90,7 +91,47 @@ const ChessGame = ({ onBack }) => {
     }
   };
 
+  function makeRandomMove() {
+    setIsAiThinking(true);
+    setTimeout(() => {
+      const possibleMoves = chess.moves();
+      if (chess.isGameOver() || chess.isDraw() || possibleMoves.length === 0) {
+        setIsAiThinking(false);
+        return;
+      }
+      
+      const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+      const move = possibleMoves[randomIndex];
+      
+      const gameCopy = new Chess(chess.fen());
+      gameCopy.move(move);
+      setChess(gameCopy);
+      setIsAiThinking(false);
+    }, 1000);
+  }
+
   function onDrop(sourceSquare, targetSquare) {
+    if (mode === 'ai') {
+      try {
+        const gameCopy = new Chess(chess.fen());
+        const move = gameCopy.move({
+          from: sourceSquare,
+          to: targetSquare,
+          promotion: 'q',
+        });
+
+        if (move === null) return false;
+        
+        setChess(gameCopy);
+        
+        // AI Turn
+        setTimeout(makeRandomMove, 1000);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
     if (game?.status !== 'playing') return false;
     
     const currentTurnId = game.currentTurn?._id || game.currentTurn;
@@ -104,10 +145,9 @@ const ChessGame = ({ onBack }) => {
     const move = {
       from: sourceSquare,
       to: targetSquare,
-      promotion: 'q', // always promote to queen for simplicity
+      promotion: 'q',
     };
 
-    // Emit to backend to validate and update
     socket.emit('game:move', { roomCode: game.roomCode, move });
     return true;
   }
@@ -206,10 +246,10 @@ const ChessGame = ({ onBack }) => {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ color: 'white', fontWeight: 'bold' }}>
-              {game?.players?.find(p => p.user?._id !== user?._id)?.user?.fullName || 'بانتظار الخصم...'}
+              {mode === 'ai' ? 'الكمبيوتر (AI)' : (game?.players?.find(p => p.user?._id !== user?._id)?.user?.fullName || 'بانتظار الخصم...')}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>
-              {game?.currentTurn?._id !== user?._id ? 'يفكر...' : 'ينتظر...'}
+              {(mode === 'ai' ? isAiThinking : game?.currentTurn?._id !== user?._id) ? 'يفكر...' : 'ينتظر...'}
             </div>
           </div>
         </div>
