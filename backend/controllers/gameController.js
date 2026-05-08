@@ -11,17 +11,19 @@ export const createGame = async (req, res) => {
   const { _id: userId, batchId } = req.user;
 
   try {
-    console.log('Creating game for user:', userId, 'Batch:', batchId);
     let roomCode = generateRoomCode();
     // Ensure uniqueness
     while (await GameSession.findOne({ roomCode, status: { $ne: 'finished' } })) {
       roomCode = generateRoomCode();
     }
 
+    // Fallback batchId handling
+    const finalBatchId = batchId || req.user.batch || null;
+
     const game = await GameSession.create({
       gameType,
       roomCode,
-      batchId: batchId || null,
+      batchId: finalBatchId,
       players: [{ user: userId, symbol: gameType === 'tictactoe' ? 'X' : 'white', isReady: true }],
       status: 'waiting',
       gameState: gameType === 'tictactoe' ? { board: Array(9).fill(null) } : { fen: 'start' }

@@ -52,6 +52,7 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
   void _handleAIMove(int index) {
     if (aiBoard[index] != null || aiWinner != null || isAiThinking) return;
 
+    // 1. User Move
     setState(() {
       aiBoard[index] = 'X';
       aiWinner = _checkWinner(aiBoard);
@@ -62,7 +63,7 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
       return;
     }
 
-    // AI Turn
+    // 2. AI Turn - Strict Sequence
     setState(() => isAiThinking = true);
     Timer(const Duration(milliseconds: 600), () {
       if (!mounted) return;
@@ -76,9 +77,9 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
         setState(() {
           aiBoard[aiIndex] = 'O';
           aiWinner = _checkWinner(aiBoard);
-          isAiThinking = false;
         });
       }
+      setState(() => isAiThinking = false);
     });
   }
 
@@ -241,7 +242,7 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
       myTurn = !isAiThinking && aiWinner == null;
     } else {
       final currentUser = ref.read(authRepositoryProvider).currentUser;
-      myTurn = gameData?['currentTurn']['_id'] == currentUser?.id;
+      myTurn = gameData?['currentTurn']?['_id'] == currentUser?.id;
     }
 
     return Padding(

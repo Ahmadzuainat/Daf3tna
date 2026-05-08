@@ -46,7 +46,9 @@ const TicTacToe = ({ onBack }) => {
       setRoomCode(res.data.roomCode);
       socket.emit('game:joinRoom', { roomCode: res.data.roomCode });
     } catch (err) {
-      toast.error('فشل إنشاء الغرفة');
+      const errorMsg = err.response?.data?.message || 'فشل إنشاء الغرفة - تأكد من اتصال الإنترنت';
+      toast.error(errorMsg);
+      console.error('Create room error:', err);
     } finally {
       setLoading(false);
     }
@@ -87,42 +89,37 @@ const TicTacToe = ({ onBack }) => {
   const handleAIMove = (index) => {
     if (aiBoard[index] || aiWinner || isAiThinking) return;
     
-    // 1. User Move (X)
-    const newBoard = [...aiBoard];
-    newBoard[index] = 'X';
-    setAiBoard(newBoard);
+    // 1. User Move (X) - Update state immediately
+    const updatedBoard = [...aiBoard];
+    updatedBoard[index] = 'X';
+    setAiBoard(updatedBoard);
     
-    const win = checkWinner(newBoard);
+    const win = checkWinner(updatedBoard);
     if (win) {
       setAiWinner(win);
       return;
     }
 
-    if (!newBoard.includes(null)) {
+    if (!updatedBoard.includes(null)) {
       setAiWinner('draw');
       return;
     }
 
-    // 2. AI Turn (O)
+    // 2. AI Turn (O) - Use the updatedBoard directly
     setIsAiThinking(true);
     setTimeout(() => {
-      setAiBoard(currentBoard => {
-        const boardCopy = [...currentBoard];
-        const emptyIndices = boardCopy.map((v, i) => v === null ? i : null).filter(v => v !== null);
-        if (emptyIndices.length === 0) {
-          setIsAiThinking(false);
-          return currentBoard;
-        }
-
+      const emptyIndices = updatedBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
+      if (emptyIndices.length > 0) {
         const aiIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-        boardCopy[aiIndex] = 'O';
+        updatedBoard[aiIndex] = 'O';
         
-        const winO = checkWinner(boardCopy);
+        // Update state with the final board after AI move
+        setAiBoard([...updatedBoard]);
+        
+        const winO = checkWinner(updatedBoard);
         if (winO) setAiWinner(winO);
-        
-        setIsAiThinking(false);
-        return boardCopy;
-      });
+      }
+      setIsAiThinking(false);
     }, 600);
   };
 
