@@ -111,45 +111,43 @@ const ChessGame = ({ onBack }) => {
   }
 
   function onDrop(sourceSquare, targetSquare) {
-    if (mode === 'ai') {
-      try {
-        const gameCopy = new Chess(chess.fen());
-        const move = gameCopy.move({
-          from: sourceSquare,
-          to: targetSquare,
-          promotion: 'q',
-        });
-
-        if (move === null) return false;
-        
-        setChess(gameCopy);
-        
-        // AI Turn
-        setTimeout(makeRandomMove, 1000);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    }
-
-    if (game?.status !== 'playing') return false;
-    
-    const currentTurnId = game.currentTurn?._id || game.currentTurn;
+    // 1. Check if it's even your turn
+    const currentTurnId = game?.currentTurn?._id || game?.currentTurn;
     const userId = user?._id || user?.id;
+    const isMyTurn = mode === 'ai' ? !isAiThinking : (currentTurnId?.toString() === userId?.toString());
 
-    if (currentTurnId?.toString() !== userId?.toString()) {
+    if (!isMyTurn) {
       toast.error('ليس دورك حالياً');
       return false;
     }
 
-    const move = {
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: 'q',
-    };
+    try {
+      // 2. Validate move locally first
+      const gameCopy = new Chess(chess.fen());
+      const moveResult = gameCopy.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q',
+      });
 
-    socket.emit('game:move', { roomCode: game.roomCode, move });
-    return true;
+      if (moveResult === null) return false; // Illegal move
+
+      // 3. Update local state immediately for smoothness
+      setChess(gameCopy);
+
+      if (mode === 'ai') {
+        setTimeout(makeRandomMove, 1000);
+      } else {
+        // 4. Send to server for multiplayer
+        socket.emit('game:move', { 
+          roomCode: game.roomCode, 
+          move: { from: sourceSquare, to: targetSquare, promotion: 'q' } 
+        });
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   if (!mode) {
