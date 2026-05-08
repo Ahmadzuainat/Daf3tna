@@ -21,14 +21,12 @@ const registerGameHandlers = (io, socket) => {
 
       console.log(`🎮 User ${socket.userId} joined game room: ${roomCode}`);
       
-      // Notify others in the room about join/reconnect
-      socket.to(`game_${roomCode}`).emit('game:playerStatus', { 
-        userId: socket.userId, 
-        status: 'online' 
-      });
+      // Notify everyone in the room with the latest game state
+      const populatedGame = await GameSession.findById(game._id)
+        .populate('players.user', 'fullName profilePicture')
+        .populate('currentTurn', 'fullName profilePicture');
 
-      // Send current state to the joining user
-      socket.emit('game:init', game);
+      io.to(`game_${roomCode}`).emit('game:updated', populatedGame);
     } catch (error) {
       console.error('Join room error:', error);
     }
@@ -107,9 +105,9 @@ const registerGameHandlers = (io, socket) => {
       await game.save();
 
       const updatedGame = await GameSession.findOne({ roomCode })
-        .populate('players.user', 'fullName avatarUrl')
-        .populate('currentTurn', 'fullName')
-        .populate('winner', 'fullName');
+        .populate('players.user', 'fullName profilePicture')
+        .populate('currentTurn', 'fullName profilePicture')
+        .populate('winner', 'fullName profilePicture');
         
       io.to(`game_${roomCode}`).emit('game:updated', updatedGame);
 
