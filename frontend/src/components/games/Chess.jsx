@@ -162,7 +162,7 @@ const ChessGame = ({ onBack }) => {
         
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', justifyContent: 'center' }}>
           <button 
-            onClick={() => { toast.info('AI mode coming soon!'); setMode('ai'); }}
+            onClick={() => setMode('ai')}
             style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '24px', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '20px', cursor: 'pointer' }}
           >
             <div style={{ background: '#10B981', padding: '12px', borderRadius: '16px' }}><Monitor size={24} /></div>
@@ -273,7 +273,7 @@ const ChessGame = ({ onBack }) => {
           <div style={{ flex: 1 }}>
             <div style={{ color: 'white', fontWeight: 'bold' }}>أنت ({user?.fullName?.split(' ')[0] || 'لاعب'})</div>
             <div style={{ color: '#8B5CF6', fontSize: '0.7rem', fontWeight: 'bold' }}>
-              {game?.currentTurn?._id === user?._id ? 'Your Turn!' : "Opponent's Turn"}
+              {(mode === 'ai' ? !isAiThinking : (game?.currentTurn?._id?.toString() === user?._id?.toString() || game?.currentTurn?.toString() === user?._id?.toString())) ? 'دورك الآن!' : "انتظر دور الخصم"}
             </div>
           </div>
         </div>

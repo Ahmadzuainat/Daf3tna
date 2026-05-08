@@ -65,7 +65,7 @@ export const joinGame = async (req, res) => {
     // Start the game if 2 players joined
     if (game.players.length === 2) {
       game.status = 'playing';
-      game.currentTurn = game.players[0].user; // Player 1 starts
+      game.currentTurn = game.players[0].user; // Player 1 starts (White/X)
     }
 
     await game.save();
