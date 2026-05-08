@@ -116,25 +116,39 @@ const registerGameHandlers = (io, socket) => {
         }
       }
 
-      game.markModified('gameState');
-      await game.save();
+      // Update the database atomically
+      await GameSession.findOneAndUpdate(
+        { roomCode, status: 'playing' },
+        { 
+          $set: { 
+            gameState: game.gameState,
+            currentTurn: game.currentTurn,
+            status: game.status,
+            winner: game.winner
+          },
+          $push: { history: { move, playedBy: socket.userId } }
+        }
+      );
 
+      // Fetch fully populated game to broadcast
       const updatedGame = await GameSession.findOne({ roomCode })
         .populate('players.user', 'fullName profilePicture')
         .populate('currentTurn', 'fullName profilePicture')
         .populate('winner', 'fullName profilePicture');
         
-      io.to(`game_${roomCode}`).emit('game:updated', updatedGame);
+      if (updatedGame) {
+        io.to(`game_${roomCode}`).emit('game:updated', updatedGame);
 
-      if (game.status === 'finished') {
-        io.to(`game_${roomCode}`).emit('game:over', { 
-          winner: game.winner,
-          reason: game.gameType === 'chess' ? 'Checkmate' : 'Win'
-        });
+        if (updatedGame.status === 'finished') {
+          io.to(`game_${roomCode}`).emit('game:over', { 
+            winner: updatedGame.winner,
+            reason: updatedGame.gameType === 'chess' ? 'Checkmate' : 'Win'
+          });
+        }
       }
-
     } catch (error) {
       console.error('Game move error:', error);
+      socket.emit('game:error', { message: 'حدث خطأ أثناء تنفيذ النقلة' });
     }
   });
 

@@ -156,6 +156,16 @@ const ChessGame = ({ onBack }) => {
     }
   }
 
+  const getOpponent = () => {
+    if (mode === 'ai') return { fullName: 'الكمبيوتر (AI)' };
+    const opponentPlayer = game?.players?.find(p => {
+      const pId = p.user?._id?.toString() || p.user?.toString();
+      const uId = user?._id?.toString() || user?.id?.toString();
+      return pId !== uId;
+    });
+    return opponentPlayer?.user || null;
+  };
+
   if (!mode) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-dark)', padding: '24px 16px', display: 'flex', flexDirection: 'column' }}>
@@ -250,10 +260,10 @@ const ChessGame = ({ onBack }) => {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ color: 'white', fontWeight: 'bold' }}>
-              {mode === 'ai' ? 'الكمبيوتر (AI)' : (game?.players?.find(p => p.user?._id !== user?._id)?.user?.fullName || 'بانتظار الخصم...')}
+              {getOpponent()?.fullName || 'بانتظار الخصم...'}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>
-              {(mode === 'ai' ? isAiThinking : game?.currentTurn?._id !== user?._id) ? 'يفكر...' : 'ينتظر...'}
+              {(mode === 'ai' ? isAiThinking : (game?.currentTurn?._id?.toString() !== user?._id?.toString() && game?.currentTurn?.toString() !== user?._id?.toString())) ? 'يفكر...' : 'ينتظر...'}
             </div>
           </div>
         </div>
