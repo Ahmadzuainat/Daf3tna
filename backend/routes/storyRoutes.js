@@ -66,7 +66,7 @@ router.delete('/:id', protect, async (req, res) => {
 
     // Check ownership or admin status
     const isOwner = story.user.toString() === req.user._id.toString();
-    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+    const isAdmin = ['admin', 'superadmin', 'moderator'].includes(req.user.role);
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: 'غير مصرح لك بحذف هذه القصة' });

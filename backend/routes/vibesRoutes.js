@@ -123,10 +123,17 @@ router.post('/quotes', protect, async (req, res) => {
 
 router.delete('/quotes/:id', protect, async (req, res) => {
   try {
-    const quote = await Quote.findOne({ _id: req.params.id, addedBy: req.user._id });
-    if (!quote) return res.status(404).json({ message: 'الاقتباس غير موجود أو غير مصرح لك بحذفه' });
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
+    const quote = await Quote.findById(req.params.id);
+    if (!quote) return res.status(404).json({ message: 'الاقتباس غير موجود' });
+
+    const isOwner = quote.addedBy.toString() === req.user._id.toString();
+    if (!isOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذا الاقتباس' });
+    }
+
     await Quote.findByIdAndDelete(req.params.id);
-    res.json({ message: 'تم حذف الاقتباس' });
+    res.json({ message: 'تم حذف الاقتباس بنجاح' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -169,10 +176,17 @@ router.post('/confessions', protect, async (req, res) => {
 
 router.delete('/confessions/:id', protect, async (req, res) => {
   try {
-    const confession = await Confession.findOne({ _id: req.params.id, author: req.user._id });
-    if (!confession) return res.status(404).json({ message: 'الاعتراف غير موجود أو غير مصرح لك بحذفه' });
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
+    const confession = await Confession.findById(req.params.id);
+    if (!confession) return res.status(404).json({ message: 'الاعتراف غير موجود' });
+
+    const isOwner = confession.author.toString() === req.user._id.toString();
+    if (!isOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذا الاعتراف' });
+    }
+
     await Confession.findByIdAndDelete(req.params.id);
-    res.json({ message: 'تم حذف الاعتراف' });
+    res.json({ message: 'تم حذف الاعتراف بنجاح' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -220,10 +234,17 @@ router.post('/panics', protect, async (req, res) => {
 
 router.delete('/panics/:id', protect, async (req, res) => {
   try {
-    const panic = await Panic.findOne({ _id: req.params.id, author: req.user._id });
-    if (!panic) return res.status(404).json({ message: 'الفزعة غير موجودة أو غير مصرح لك بحذفها' });
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
+    const panic = await Panic.findById(req.params.id);
+    if (!panic) return res.status(404).json({ message: 'الفزعة غير موجودة' });
+
+    const isOwner = panic.author.toString() === req.user._id.toString();
+    if (!isOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذه الفزعة' });
+    }
+
     await Panic.findByIdAndDelete(req.params.id);
-    res.json({ message: 'تم حذف الفزعة' });
+    res.json({ message: 'تم حذف الفزعة بنجاح' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -314,15 +335,37 @@ router.post('/notebooks/:id/messages', protect, async (req, res) => {
 
 router.delete('/notebooks/:id/messages/:msgId', protect, async (req, res) => {
   try {
-    const notebook = await Notebook.findOne({ _id: req.params.id, batchId: req.user.batchId });
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
+    const notebook = await Notebook.findById(req.params.id);
     if (!notebook) return res.status(404).json({ message: 'الدفتر غير موجود' });
-    if (notebook.owner.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'فقط صاحب الدفتر يمكنه الحذف' });
+
+    const isOwner = notebook.owner.toString() === req.user._id.toString();
+    if (!isOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذه الرسالة' });
     }
 
     notebook.messages = notebook.messages.filter(m => m._id.toString() !== req.params.msgId);
     await notebook.save();
     res.json(notebook);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete whole notebook (Admin only)
+router.delete('/notebooks/:id', protect, async (req, res) => {
+  try {
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
+    const notebook = await Notebook.findById(req.params.id);
+    if (!notebook) return res.status(404).json({ message: 'الدفتر غير موجود' });
+
+    const isOwner = notebook.owner.toString() === req.user._id.toString();
+    if (!isOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذا الدفتر' });
+    }
+
+    await Notebook.findByIdAndDelete(req.params.id);
+    res.json({ message: 'تم حذف الدفتر بنجاح' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -466,10 +509,35 @@ router.post('/instants/:id/like', protect, async (req, res) => {
 // Delete an instant
 router.delete('/instants/:id', protect, async (req, res) => {
   try {
-    const instant = await Instant.findOne({ _id: req.params.id, user: req.user._id });
-    if (!instant) return res.status(404).json({ message: 'اللقطة غير موجودة أو غير مصرح لك بحذفها' });
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
+    const instant = await Instant.findById(req.params.id);
+    if (!instant) return res.status(404).json({ message: 'اللقطة غير موجودة' });
+
+    const isOwner = instant.user.toString() === req.user._id.toString();
+    if (!isOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذه اللقطة' });
+    }
+
     await Instant.findByIdAndDelete(req.params.id);
     res.json({ message: 'تم حذف اللقطة بنجاح' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.delete('/time-capsules/:id', protect, async (req, res) => {
+  try {
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
+    const capsule = await TimeCapsule.findById(req.params.id);
+    if (!capsule) return res.status(404).json({ message: 'الكبسولة غير موجودة' });
+
+    const isOwner = capsule.author.toString() === req.user._id.toString();
+    if (!isOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذه الكبسولة' });
+    }
+
+    await TimeCapsule.findByIdAndDelete(req.params.id);
+    res.json({ message: 'تم حذف الكبسولة بنجاح' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

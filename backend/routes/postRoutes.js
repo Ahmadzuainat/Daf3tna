@@ -56,13 +56,43 @@ router.put('/:id', protect, async (req, res) => {
 // Delete Post
 router.delete('/:id', protect, async (req, res) => {
   try {
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
     const post = await Post.findById(req.params.id);
-    if (!post || post.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'غير مسموح' });
+    if (!post) return res.status(404).json({ message: 'المنشور غير موجود' });
+
+    const isOwner = post.user.toString() === req.user._id.toString();
+    if (!isOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذا المنشور' });
     }
+
     await Post.findByIdAndDelete(req.params.id);
-    req.io.to(req.user.batchId).emit('post_deleted', req.params.id);
-    res.json({ message: 'تم الحذف' });
+    req.io.to(post.batchId).emit('post_deleted', req.params.id);
+    res.json({ message: 'تم حذف المنشور بنجاح' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete Comment
+router.delete('/:id/comment/:commentId', protect, async (req, res) => {
+  try {
+    const isModerator = ['superadmin', 'admin', 'moderator'].includes(req.user.role);
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'المنشور غير موجود' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ message: 'التعليق غير موجود' });
+
+    const isCommentOwner = comment.user.toString() === req.user._id.toString();
+    const isPostOwner = post.user.toString() === req.user._id.toString();
+
+    if (!isCommentOwner && !isPostOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذا التعليق' });
+    }
+
+    post.comments.pull(req.params.commentId);
+    await post.save();
+    res.json({ message: 'تم حذف التعليق بنجاح' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
