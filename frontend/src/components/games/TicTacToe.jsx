@@ -262,20 +262,20 @@ const TicTacToe = ({ onBack }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '350px', marginBottom: '40px' }}>
              <div style={{ 
                textAlign: 'center', padding: '12px', borderRadius: '16px', 
-               border: (mode === 'friend' ? game.currentTurn._id === game.players[0].user._id : !isAiThinking) ? '2px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)', 
+               border: (mode === 'friend' ? game?.currentTurn?._id === game?.players[0]?.user?._id : !isAiThinking) ? '2px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)', 
                background: 'rgba(255,255,255,0.05)', minWidth: '100px' 
              }}>
                 <div style={{ color: '#3B82F6', fontWeight: 'bold' }}>X</div>
-                <div style={{ color: 'white', fontSize: '0.8rem' }}>{mode === 'ai' ? 'أنت' : game.players[0].user.fullName.split(' ')[0]}</div>
+                <div style={{ color: 'white', fontSize: '0.8rem' }}>{mode === 'ai' ? 'أنت' : (game?.players[0]?.user?.fullName?.split(' ')[0] || 'لاعب 1')}</div>
                 {mode === 'ai' && !isAiThinking && !aiWinner && <div style={{ fontSize: '0.6rem', color: '#3B82F6', marginTop: '4px' }}>دورك</div>}
              </div>
              <div style={{ 
                textAlign: 'center', padding: '12px', borderRadius: '16px', 
-               border: (mode === 'friend' ? game.currentTurn._id === game.players[1]?.user?._id : isAiThinking) ? '2px solid #EF4444' : '1px solid rgba(255,255,255,0.1)', 
+               border: (mode === 'friend' ? game?.currentTurn?._id === game?.players[1]?.user?._id : isAiThinking) ? '2px solid #EF4444' : '1px solid rgba(255,255,255,0.1)', 
                background: 'rgba(255,255,255,0.05)', minWidth: '100px' 
              }}>
                 <div style={{ color: '#EF4444', fontWeight: 'bold' }}>O</div>
-                <div style={{ color: 'white', fontSize: '0.8rem' }}>{mode === 'ai' ? 'الكمبيوتر' : game.players[1]?.user?.fullName?.split(' ')[0]}</div>
+                <div style={{ color: 'white', fontSize: '0.8rem' }}>{mode === 'ai' ? 'الكمبيوتر' : (game?.players[1]?.user?.fullName?.split(' ')[0] || 'لاعب 2')}</div>
                 {mode === 'ai' && isAiThinking && <div style={{ fontSize: '0.6rem', color: '#EF4444', marginTop: '4px' }}>يفكر...</div>}
              </div>
           </div>

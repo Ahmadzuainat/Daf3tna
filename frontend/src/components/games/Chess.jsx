@@ -189,10 +189,10 @@ const ChessGame = ({ onBack }) => {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ color: 'white', fontWeight: 'bold' }}>
-              {game?.players.find(p => p.user._id !== user._id)?.user?.fullName || 'Waiting for opponent...'}
+              {game?.players?.find(p => p.user?._id !== user?._id)?.user?.fullName || 'بانتظار الخصم...'}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>
-              {game?.currentTurn?._id !== user._id ? 'Thinking...' : 'Waiting...'}
+              {game?.currentTurn?._id !== user?._id ? 'يفكر...' : 'ينتظر...'}
             </div>
           </div>
         </div>
@@ -214,9 +214,9 @@ const ChessGame = ({ onBack }) => {
             {orientation === 'white' ? 'W' : 'B'}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ color: 'white', fontWeight: 'bold' }}>أنت ({user.fullName.split(' ')[0]})</div>
+            <div style={{ color: 'white', fontWeight: 'bold' }}>أنت ({user?.fullName?.split(' ')[0] || 'لاعب'})</div>
             <div style={{ color: '#8B5CF6', fontSize: '0.7rem', fontWeight: 'bold' }}>
-              {game?.currentTurn?._id === user._id ? 'Your Turn!' : "Opponent's Turn"}
+              {game?.currentTurn?._id === user?._id ? 'Your Turn!' : "Opponent's Turn"}
             </div>
           </div>
         </div>
