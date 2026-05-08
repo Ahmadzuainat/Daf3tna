@@ -29,7 +29,8 @@ export const createGame = async (req, res) => {
       gameState: gameType === 'tictactoe' ? { board: Array(9).fill(null) } : { fen: 'start' }
     });
 
-    res.status(201).json(game);
+    const populatedGame = await GameSession.findById(game._id).populate('players.user', 'fullName profilePicture');
+    res.status(201).json(populatedGame);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -41,7 +42,7 @@ export const joinGame = async (req, res) => {
 
   try {
     const game = await GameSession.findOne({ roomCode, status: 'waiting' })
-      .populate('players.user', 'fullName avatarUrl');
+      .populate('players.user', 'fullName profilePicture');
 
     if (!game) {
       return res.status(404).json({ message: 'الغرفة غير موجودة أو بدأت اللعبة بالفعل' });
@@ -68,7 +69,10 @@ export const joinGame = async (req, res) => {
     }
 
     await game.save();
-    res.json(game);
+    const finalGame = await GameSession.findById(game._id)
+      .populate('players.user', 'fullName profilePicture')
+      .populate('currentTurn', 'fullName profilePicture');
+    res.json(finalGame);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -77,9 +81,9 @@ export const joinGame = async (req, res) => {
 export const getGameStatus = async (req, res) => {
   try {
     const game = await GameSession.findOne({ roomCode: req.params.roomCode })
-      .populate('players.user', 'fullName avatarUrl')
-      .populate('winner', 'fullName')
-      .populate('currentTurn', 'fullName');
+      .populate('players.user', 'fullName profilePicture')
+      .populate('winner', 'fullName profilePicture')
+      .populate('currentTurn', 'fullName profilePicture');
     
     if (!game) return res.status(404).json({ message: 'Game not found' });
     res.json(game);
