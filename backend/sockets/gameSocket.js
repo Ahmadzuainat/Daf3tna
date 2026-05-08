@@ -75,11 +75,15 @@ const registerGameHandlers = (io, socket) => {
 
       // --- CHESS LOGIC ---
       if (game.gameType === 'chess') {
-        const chess = new Chess(game.gameState.fen || undefined);
+        const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        let currentFen = game.gameState.fen;
+        if (!currentFen || currentFen === 'start') currentFen = startFen;
+        const chess = new Chess(currentFen);
         
         try {
           const result = chess.move(move); // move example: { from: 'e2', to: 'e4' }
           if (result) {
+            console.log(`✅ Move Valid in ${roomCode}: ${move.from}->${move.to}`);
             game.gameState.fen = chess.fen();
             game.history.push({ move, playedBy: socket.userId });
 

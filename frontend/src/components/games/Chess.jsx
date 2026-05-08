@@ -28,14 +28,23 @@ const ChessGame = ({ onBack }) => {
         ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
         : game.gameState.fen;
       
-      chess.load(serverFen);
-      setFen(chess.fen());
+      // ONLY sync if the server FEN is different AND it's not our turn
+      // This prevents "snapping back" during our own move
+      const currentTurnId = game.currentTurn?._id || game.currentTurn;
+      const isMyTurn = currentTurnId?.toString() === user?._id?.toString();
+
+      if (chess.fen() !== serverFen) {
+        if (!isMyTurn || chess.history().length === 0) {
+          chess.load(serverFen);
+          setFen(chess.fen());
+        }
+      }
       
       // Determine orientation
       const me = game.players?.find(p => p.user?._id === user?._id);
       if (me) setOrientation(me.symbol);
     }
-  }, [game?.gameState?.fen, user?._id, game?.players, chess]);
+  }, [game?.gameState?.fen, user?._id, game?.players, chess, game?.currentTurn]);
 
   useEffect(() => {
     if (!socket) return;
