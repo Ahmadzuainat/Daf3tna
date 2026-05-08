@@ -210,6 +210,21 @@ class _AwardsViewState extends ConsumerState<AwardsView> {
               style: TextStyle(color: Colors.white.withValues(alpha: 0.05), fontSize: 72, fontWeight: FontWeight.w900),
             ),
           ),
+          if (ref.watch(currentUserProvider)?.role == 'superadmin' || 
+              ref.watch(currentUserProvider)?.role == 'admin' ||
+              ref.watch(currentUserProvider)?.role == 'moderator')
+            Positioned(
+              top: 12,
+              left: 12,
+              child: IconButton(
+                icon: const Icon(LucideIcons.trash2, color: Colors.redAccent, size: 20),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.red.withValues(alpha: 0.1),
+                  padding: const EdgeInsets.all(8),
+                ),
+                onPressed: () => _handleDelete(item['_id']),
+              ),
+            ),
         ],
       ),
     );
@@ -352,6 +367,34 @@ class _AwardsViewState extends ConsumerState<AwardsView> {
       ToastService.showSuccess(context, 'تم التصويت بنجاح! 🏆');
     } catch (e) {
       ToastService.showError(context, 'لقد صوّت بالفعل لهذا اللقب');
+    }
+  }
+
+  void _handleDelete(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('حذف الجائزة', style: TextStyle(color: Colors.white)),
+        content: const Text('هل أنت متأكد من حذف هذه الجائزة؟ لا يمكن التراجع عن هذا الفعل.', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), 
+            child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ref.read(vibesRepositoryProvider).deleteAward(id);
+      ref.invalidate(awardsProvider);
+      if (mounted) ToastService.showSuccess(context, 'تم حذف الجائزة بنجاح');
+    } catch (e) {
+      if (mounted) ToastService.showError(context, 'فشل حذف الجائزة');
     }
   }
 }

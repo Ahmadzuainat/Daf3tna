@@ -94,4 +94,8 @@ class VibesRepository {
   Future<void> deleteInstant(String id) async {
     await _dio.delete('/vibes/instants/$id');
   }
+
+  Future<void> deleteAward(String id) async {
+    await _dio.delete('/vibes/awards/$id');
+  }
 }
