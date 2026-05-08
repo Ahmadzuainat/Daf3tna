@@ -50,7 +50,10 @@ router.post('/awards', protect, async (req, res) => {
 // Vote on an award (no duplicate votes)
 router.post('/awards/:id/vote', protect, async (req, res) => {
   try {
-    const award = await Award.findOne({ _id: req.params.id, batchId: req.user.batchId });
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const query = isSuperAdmin ? { _id: req.params.id } : { _id: req.params.id, batchId: req.user.batchId };
+    const award = await Award.findOne(query);
+    
     if (!award) return res.status(404).json({ message: 'الجائزة غير موجودة' });
 
     const userId = req.user._id.toString();
