@@ -15,7 +15,7 @@ class AuthScreen extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.backgroundDark,
+              AppColors.background,
               Color(0xFF1E1B4B), // Deep purple tint
             ],
           ),
@@ -34,11 +34,11 @@ class AuthScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const LinearGradient(
-                        colors: [AppTheme.primaryBlue, AppTheme.primaryPurple],
+                        colors: [AppColors.primary, AppColors.secondary],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryPurple.withOpacity(0.5),
+                          color: AppColors.secondary.withOpacity(0.5),
                           blurRadius: 20,
                           spreadRadius: 2,
                         ),
@@ -89,7 +89,7 @@ class AuthScreen extends StatelessWidget {
                           },
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: AppTheme.primaryBlue,
+                            backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),

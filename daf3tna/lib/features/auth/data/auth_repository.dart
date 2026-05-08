@@ -1,40 +1,71 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/network/supabase_client.dart';
+import 'package:daf3tna/core/network/api_client.dart';
+import 'package:daf3tna/models/user_model.dart';
+import 'package:daf3tna/core/storage/secure_storage_service.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(ref.watch(supabaseProvider));
+  return AuthRepository(ref.read(apiClientProvider), ref.read(secureStorageServiceProvider));
 });
 
+final currentUserProvider = StateProvider<UserModel?>((ref) => null);
+
 class AuthRepository {
-  final SupabaseClient _supabase;
+  final Dio _dio;
+  final SecureStorageService _storage;
 
-  AuthRepository(this._supabase);
+  AuthRepository(this._dio, this._storage);
 
-  Future<AuthResponse> signUp({
-    required String email,
-    required String password,
-    required String fullName,
-    required String batchId,
-  }) async {
-    // We store batch_id in metadata so RLS triggers can map it to the users table securely
-    return await _supabase.auth.signUp(
-      email: email,
-      password: password,
-      data: {
-        'full_name': fullName,
-        'batch_id': batchId,
-      },
-    );
+  Future<UserModel> login(String email, String password) async {
+    try {
+      final response = await _dio.post('/auth/login', data: {
+        'email': email,
+        'password': password,
+      });
+
+      final data = response.data;
+      if (data == null || data is! Map<String, dynamic>) {
+        throw Exception('تنسيق الرد من السيرفر غير صحيح');
+      }
+
+      final token = data['token'];
+      if (token == null) {
+        throw Exception('فشل الحصول على توكن الدخول');
+      }
+
+      await _storage.saveToken(token.toString());
+      
+      // Pass the entire map, UserModel.fromJson handles internal nulls
+      return UserModel.fromJson(data);
+    } catch (e) {
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ?? e.message;
+        throw Exception(message);
+      }
+      rethrow;
+    }
   }
 
-  Future<AuthResponse> signIn({required String email, required String password}) async {
-    return await _supabase.auth.signInWithPassword(email: email, password: password);
+  Future<void> register(Map<String, dynamic> data) async {
+    try {
+      await _dio.post('/auth/register', data: data);
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  Future<void> signOut() async {
-    await _supabase.auth.signOut();
+  Future<void> verifyOtp(String email, String otp) async {
+    try {
+      await _dio.post('/auth/verify-otp', data: {
+        'email': email,
+        'otp': otp,
+      });
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  Stream<User?> get authStateChanges => _supabase.auth.onAuthStateChange.map((event) => event.session?.user);
+  Future<void> logout() async {
+    await _storage.clearAll();
+  }
 }

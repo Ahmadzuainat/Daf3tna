@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { ArrowRight, Crown, Star, Search as SearchIcon, X } from 'lucide-react';
+import { ArrowRight, Crown, Star, Search as SearchIcon, X, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AwardsView = ({ onBack }) => {
-  const { awards, fetchAwards, voteAward, createAward, users, fetchUsers } = useAppStore();
+  const { awards, fetchAwards, voteAward, createAward, deleteAward, users, fetchUsers } = useAppStore();
   const { user: me } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,6 +38,17 @@ const AwardsView = ({ onBack }) => {
       setShowModal(false); setSelectedUser(null); setAwardTitle(''); setSearchQuery('');
       toast.success('تم إنشاء اللقب بنجاح! 🎉');
     } catch(e) { toast.error('حدث خطأ في إنشاء الجائزة'); }
+  };
+  
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('هل أنت متأكد من حذف هذه الجائزة؟')) return;
+    try {
+      await deleteAward(id);
+      toast.success('تم حذف الجائزة بنجاح');
+    } catch(e) {
+      toast.error('فشل حذف الجائزة');
+    }
   };
 
   return (
@@ -84,6 +95,21 @@ const AwardsView = ({ onBack }) => {
                   <span style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>المرشح: {award.user?.fullName}</span>
                   {alreadyVoted && <span style={{ display: 'block', color: '#10B981', fontSize: '0.85rem', marginTop: '4px' }}>✓ صوتت بالفعل</span>}
                 </div>
+
+                {me?.role === 'superadmin' && (
+                  <button 
+                    onClick={(e) => handleDelete(e, award._id)}
+                    style={{ 
+                      background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', 
+                      padding: '10px', borderRadius: '12px', color: '#EF4444', cursor: 'pointer',
+                      zIndex: 10, transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                )}
               </div>
             );
           })}

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/theme/app_theme.dart';
-import 'core/router/app_router.dart';
+import 'package:daf3tna/core/theme/app_theme.dart';
+import 'package:daf3tna/core/router/app_router.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // TODO: Initialize Supabase here
+  
+  // Initialize timeago with Arabic
+  timeago.setLocaleMessages('ar', timeago.ArMessages());
   
   runApp(
     const ProviderScope(
@@ -23,7 +26,7 @@ class Daf3tnaApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Daf3tna - دفعتنا',
-      theme: AppTheme.darkTheme, // Defaulting to dark mode as requested
+      theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,
       routerConfig: router,

@@ -112,7 +112,12 @@ router.post('/:hubId/messages', protect, async (req, res) => {
     await newMessage.save();
     const populated = await newMessage.populate('sender', 'fullName avatarUrl username');
 
-    // Socket emission will be handled here or in controller
+    // Broadcast via socket.io
+    const room = `hub_${req.params.hubId}_ch_${channelId}`;
+    if (req.io) {
+      req.io.to(room).emit('hub:messageReceived', populated);
+    }
+
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

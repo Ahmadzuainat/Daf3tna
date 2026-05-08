@@ -15,7 +15,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   Future<void> login(String email, String password) async {
     state = const AsyncValue.loading();
     try {
-      await _authRepository.signIn(email: email, password: password);
+      await _authRepository.login(email, password);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -25,12 +25,14 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   Future<void> register(String email, String password, String name, String batchId) async {
     state = const AsyncValue.loading();
     try {
-      await _authRepository.signUp(
-        email: email, 
-        password: password, 
-        fullName: name, 
-        batchId: batchId
-      );
+      await _authRepository.register({
+        'email': email, 
+        'password': password, 
+        'fullName': name, 
+        'batchId': batchId,
+        'username': email.split('@')[0], // Default username
+        'major': 'عام' // Default major
+      });
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

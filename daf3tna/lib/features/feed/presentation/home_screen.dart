@@ -44,15 +44,15 @@ class HomeScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: const LinearGradient(
-                              colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
+                              colors: [AppColors.secondary, AppColors.primary],
                             ),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(3.0),
                             child: Container(
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppTheme.backgroundDark,
+                                color: AppColors.background,
                               ),
                               child: const Icon(Icons.person, color: Colors.white54),
                             ),
@@ -132,8 +132,8 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: AppTheme.surfaceDark,
-        selectedItemColor: AppTheme.primaryBlue,
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.white54,
         type: BottomNavigationBarType.fixed,
         items: const [

@@ -321,6 +321,16 @@ export const useAppStore = create((set, get) => ({
     } catch (err) { console.error('createAward:', err); throw err; }
   },
 
+  deleteAward: async (awardId) => {
+    try {
+      await api.delete(`/vibes/awards/${awardId}`);
+      set(state => ({ awards: state.awards.filter(a => a._id !== awardId) }));
+    } catch (err) {
+      console.error('deleteAward:', err);
+      throw err;
+    }
+  },
+
   /* ─────────── CONFESSIONS ─────────── */
   fetchConfessions: async () => {
     try {

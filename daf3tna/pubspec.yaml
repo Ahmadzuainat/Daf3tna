@@ -11,15 +11,49 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.5.1
   go_router: ^13.2.0
-  supabase_flutter: ^2.4.3
+  dio: ^5.4.3+1
+  flutter_secure_storage: ^9.0.0
+  socket_io_client: ^3.0.2
   google_fonts: ^6.2.1
   cached_network_image: ^3.3.1
   lucide_icons: ^0.238.0
+  flutter_animate: ^4.5.0
+  glassmorphism: ^3.0.0
+  easy_localization: ^3.0.7
+  image_picker: ^1.1.0
+  file_picker: ^8.0.0+1
+  shimmer: ^3.0.0
+  lottie: ^3.1.0
+  intl: ^0.20.2
+  flutter_blurhash: ^0.8.2
+  share_plus: ^9.0.0
+  url_launcher: ^6.2.6
+  timeago: ^3.6.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/images/app_logo.png"
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#0B0F1A"
+  image: assets/images/app_logo.png
+  android: true
+  ios: false
+  fullscreen: true
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/translations/
+    - assets/animations/
+    - assets/images/
+

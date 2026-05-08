@@ -1,0 +1,265 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:daf3tna/models/post_model.dart';
+import 'package:daf3tna/core/theme/app_theme.dart';
+import 'package:intl/intl.dart';
+import 'package:daf3tna/core/widgets/shimmer_loading.dart';
+import 'package:flutter/services.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
+import 'package:daf3tna/features/feed/data/social_repository.dart';
+import 'package:daf3tna/features/feed/providers/feed_provider.dart';
+import 'package:daf3tna/features/profile/presentation/profile_screen.dart';
+import 'package:glassmorphism/glassmorphism.dart';
+
+class PostCard extends StatelessWidget {
+  final PostModel post;
+
+  const PostCard({super.key, required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _PostHeader(user: post.user),
+            if (post.mediaUrls.isNotEmpty) _PostMedia(url: post.mediaUrls.first),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Spacer(),
+                  Expanded(
+                    flex: 20,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _PostContent(text: post.text),
+                          const SizedBox(height: 12),
+                          _PostActions(post: post),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // The Vertical Line Accent (Gradient)
+                  Container(
+                    width: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PostHeader extends StatelessWidget {
+  final dynamic user;
+  const _PostHeader({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.02),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          const Icon(LucideIcons.moreVertical, color: AppColors.textDim, size: 18),
+          const Spacer(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                user.fullName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const Text(
+                'الآن', // Simplified time like web grid
+                style: TextStyle(color: AppColors.textDim, fontSize: 10),
+              ),
+            ],
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen(username: user.username)),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 14,
+                backgroundColor: const Color(0xFF1E293B),
+                backgroundImage: CachedNetworkImageProvider(user.avatarUrl ?? ''),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PostContent extends StatelessWidget {
+  final String text;
+  const _PostContent({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Text(
+      text,
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: 0.9),
+        fontSize: 13, // 0.8rem approx
+        height: 1.5,
+        fontWeight: FontWeight.w400,
+      ),
+      textAlign: TextAlign.right,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+class _PostMedia extends StatelessWidget {
+  final String url;
+  const _PostMedia({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 1, // Square like web template
+      child: CachedNetworkImage(
+        imageUrl: url,
+        memCacheWidth: 1000,
+        placeholder: (context, url) => const ShimmerLoading.rectangular(height: 300),
+        errorWidget: (context, url, error) => const Icon(LucideIcons.image),
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+}
+
+class _PostActions extends ConsumerWidget {
+  final PostModel post;
+  const _PostActions({required this.post});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider);
+    final isLiked = post.likes.contains(currentUser?.id);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        const Icon(LucideIcons.send, color: Colors.white24, size: 16),
+        const Spacer(),
+        _ActionItem(
+          icon: LucideIcons.messageCircle,
+          label: post.commentsCount.toString(),
+          color: post.commentsCount > 0 ? Colors.white : Colors.white.withValues(alpha: 0.6),
+          onTap: () {},
+        ),
+        const SizedBox(width: 16),
+        _ActionItem(
+          icon: isLiked ? LucideIcons.heart : LucideIcons.heart,
+          label: post.likes.length.toString(),
+          color: isLiked ? const Color(0xFFEF4444) : Colors.white.withValues(alpha: 0.6),
+          isFilled: isLiked,
+          onTap: () async {
+            try {
+              await ref.read(socialRepositoryProvider).toggleLike(post.id);
+              ref.read(feedProvider.notifier).fetchPosts(refresh: false);
+            } catch (e) {}
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool isFilled;
+  final VoidCallback onTap;
+
+  const _ActionItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.isFilled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            icon,
+            size: 18,
+            color: color,
+            fill: isFilled ? 1.0 : 0.0,
+          ),
+        ],
+      ),
+    );
+  }
+}
