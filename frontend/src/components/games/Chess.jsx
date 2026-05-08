@@ -216,7 +216,7 @@ const ChessGame = ({ onBack }) => {
           <div style={{ flex: 1 }}>
             <div style={{ color: 'white', fontWeight: 'bold' }}>أنت ({user.fullName.split(' ')[0]})</div>
             <div style={{ color: '#8B5CF6', fontSize: '0.7rem', fontWeight: 'bold' }}>
-              {game?.currentTurn?._id === user._id ? 'Your Turn!' : 'Opponent's Turn'}
+              {game?.currentTurn?._id === user._id ? 'Your Turn!' : "Opponent's Turn"}
             </div>
           </div>
         </div>
