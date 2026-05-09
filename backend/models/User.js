@@ -56,4 +56,12 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ batchId: 1, fullName: 1 });
 userSchema.index({ batchId: 1, username: 1 });
 
-export default mongoose.model('User', userSchema);
+// Optimization Indexes
+userSchema.index({ username: 1 });
+userSchema.index({ fullName: 'text' });
+userSchema.index({ batchId: 1 });
+userSchema.index({ role: 1 });
+
+const User = mongoose.model('User', userSchema);
+
+export default User;

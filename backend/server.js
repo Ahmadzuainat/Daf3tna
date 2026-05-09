@@ -1,14 +1,16 @@
 import express from 'express';
-// Heartbeat restart trigger
 import User from './models/User.js';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
+import compression from 'compression';
+import helmet from 'helmet';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import initCronJobs from './utils/cronJobs.js';
 
 // Middlewares
 import { checkSystemStatus } from './middleware/systemMiddleware.js';
@@ -29,28 +31,43 @@ import gameRoutes from './routes/gameRoutes.js';
 import registerGameHandlers from './sockets/gameSocket.js';
 
 dotenv.config();
+initCronJobs();
+
+import rateLimit from 'express-rate-limit';
 
 const app = express();
+
+// Rate Limiting to prevent spam
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { message: 'طلب زائد، يرجى المحاولة بعد قليل' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(helmet());
+app.use(compression());
+app.use('/api/', limiter);
 app.use(morgan('dev'));
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  pingInterval: 10000,
+  pingTimeout: 5000,
+  connectTimeout: 10000
 });
 
-// Basic Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Attach socket.io to req
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// GLOBAL SYSTEM CHECKS (Bans, Maintenance)
 app.use(checkSystemStatus);
 
-// Apply Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/posts', postRoutes);
@@ -67,16 +84,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
-// Error Handler
-app.use((err, req, res, next) => {
-  console.error('❌ Error:', err.message);
-  if (err.stack) console.error(err.stack);
-  res.status(err.status || 500).json({ message: err.message || 'Server Error' });
-});
+app.use(errorMiddleware);
 
-// --- SOCKET LOGIC ---
+// --- SOCKET LOGIC (Optimized) ---
 io.on('connection', (socket) => {
-  // USER INITIAL SETUP
   socket.on('setup', async (userData) => {
     if (!userData?._id) return;
     const isSuperAdmin = userData.role === 'superadmin';
@@ -88,28 +99,24 @@ io.on('connection', (socket) => {
     socket.userId = userData._id;
     socket.batchId = userData.batchId;
     socket.role = userData.role;
-
-    await User.findByIdAndUpdate(userData._id, { isOnline: true });
     
-    // Broadcast Presence
-    // 1. Update Batch Room
-    const batchOnline = await User.find({ batchId: userData.batchId, isOnline: true })
-      .select('fullName avatarUrl username');
+    // Performance: Use updateOne to minimize overhead
+    await User.updateOne({ _id: userData._id }, { isOnline: true });
+    
+    const [batchOnline, globalOnline] = await Promise.all([
+      User.find({ batchId: userData.batchId, isOnline: true }).select('fullName profilePicture username').lean(),
+      isSuperAdmin ? User.find({ isOnline: true }).select('fullName profilePicture username role batchId').lean() : Promise.resolve(null)
+    ]);
+
     io.to(userData.batchId).emit('online_users_update', batchOnline);
-
-    // 2. If SuperAdmin or needed by SuperAdmin, update global room
-    const globalOnline = await User.find({ isOnline: true })
-      .select('fullName avatarUrl username role batchId');
-    io.to('global_admin').emit('online_users_update', globalOnline);
-
-    console.log(`👤 User connected: ${userData.fullName} (${userData.role})`);
+    if (isSuperAdmin && globalOnline) {
+      io.to('global_admin').emit('online_users_update', globalOnline);
+    }
+    console.log(`👤 User connected: ${userData.fullName}`);
   });
 
-  // HUBS & CHANNELS ROOMS
   socket.on('hub:join', ({ hubId, channelId }) => {
-    const room = `hub_${hubId}_ch_${channelId}`;
-    socket.join(room);
-    console.log(`📡 User joined hub room: ${room}`);
+    socket.join(`hub_${hubId}_ch_${channelId}`);
   });
 
   socket.on('hub:leave', ({ hubId, channelId }) => {
@@ -117,56 +124,29 @@ io.on('connection', (socket) => {
   });
 
   socket.on('hub:newMessage', (message) => {
-    const room = `hub_${message.hubId}_ch_${message.channelId}`;
-    socket.to(room).emit('hub:messageReceived', message);
+    socket.to(`hub_${message.hubId}_ch_${message.channelId}`).emit('hub:messageReceived', message);
   });
 
-  socket.on('hub:typing', ({ hubId, channelId, user }) => {
-    const room = `hub_${hubId}_ch_${channelId}`;
-    socket.to(room).emit('hub:typingUpdate', { user, isTyping: true });
-  });
-
-  // PRIVATE MESSAGING (DMs)
   socket.on('dm:join', (conversationId) => {
     socket.join(conversationId);
-    console.log(`💬 User joined DM room: ${conversationId}`);
   });
 
   socket.on('dm:newMessage', (message) => {
-    // Emit to the conversation room (chatId)
-    if (message.chatId) {
-      socket.to(message.chatId).emit('dm:messageReceived', message);
-    }
-    // Also emit a notification to the specific receiver's personal room
-    if (message.receiver) {
-      socket.to(message.receiver).emit('dm:newNotification', message);
-    }
+    if (message.chatId) socket.to(message.chatId).emit('dm:messageReceived', message);
+    if (message.receiver) socket.to(message.receiver).emit('dm:newNotification', message);
   });
 
-  // GAMES LOGIC
   registerGameHandlers(io, socket);
-
-  // GLOBAL EMERGENCY ALERT (Superadmin only)
-  socket.on('admin:broadcastAlert', (alertData) => {
-    // Only trust if sender has high role (validation can be added)
-    io.emit('global:alert', alertData);
-  });
 
   socket.on('disconnect', async () => {
     if (socket.userId) {
       await User.findByIdAndUpdate(socket.userId, { isOnline: false, lastSeen: Date.now() });
-      
-      // Update Batch Room
-      const batchOnline = await User.find({ batchId: socket.batchId, isOnline: true })
-        .select('fullName avatarUrl username');
+      const batchOnline = await User.find({ batchId: socket.batchId, isOnline: true }).select('fullName profilePicture username').lean();
       io.to(socket.batchId).emit('online_users_update', batchOnline);
-
-      // Update Global Admin Room
-      const globalOnline = await User.find({ isOnline: true })
-        .select('fullName avatarUrl username role batchId');
-      io.to('global_admin').emit('online_users_update', globalOnline);
-
-      console.log(`👤 User disconnected: ${socket.userId}`);
+      if (socket.role === 'superadmin') {
+        const globalOnline = await User.find({ isOnline: true }).select('fullName profilePicture username role batchId').lean();
+        io.to('global_admin').emit('online_users_update', globalOnline);
+      }
     }
   });
 });
@@ -174,13 +154,10 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 5002;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/daf3tna';
 
-// Connect to MongoDB
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
   .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 
-// Start Server regardless of initial DB status to prevent "Early Exit"
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Health Check: http://localhost:${PORT}/api/auth/login (for local)`);
 });

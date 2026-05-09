@@ -76,7 +76,7 @@ export const joinGame = async (req, res) => {
 
     // EMIT TO ROOM IMMEDIATELY
     if (req.io) {
-      req.io.to(`game_${roomCode}`).emit('game:updated', finalGame);
+      req.io.to(`game_${roomCode.toUpperCase()}`).emit('game:updated', finalGame);
     }
 
     res.json(finalGame);

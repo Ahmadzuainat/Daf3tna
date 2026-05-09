@@ -54,12 +54,13 @@ class ProfileScreen extends ConsumerWidget {
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        // Cover Photo
+                        // Cover Photo (Optimized Caching)
                         CachedNetworkImage(
                           imageUrl: user.coverUrl ?? 'https://res.cloudinary.com/ahmadzt/image/upload/v1/covers/default_cover.jpg',
                           height: 220,
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          memCacheHeight: 440, // Optimization: Limit memory usage
                           placeholder: (context, url) => Container(color: AppColors.surface),
                           errorWidget: (context, url, error) => Container(
                             color: AppColors.surface,
@@ -80,7 +81,11 @@ class ProfileScreen extends ConsumerWidget {
                             child: CircleAvatar(
                               radius: 55,
                               backgroundColor: AppColors.surface,
-                              backgroundImage: CachedNetworkImageProvider(user.avatarUrl ?? 'https://via.placeholder.com/150'),
+                              backgroundImage: CachedNetworkImageProvider(
+                                user.avatarUrl ?? 'https://via.placeholder.com/150',
+                                maxWidth: 220, // Optimization
+                                maxHeight: 220, // Optimization
+                              ),
                             ),
                           ),
                         ),

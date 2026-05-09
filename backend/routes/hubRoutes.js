@@ -14,7 +14,8 @@ router.get('/', protect, async (req, res) => {
     const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
     
     const hubs = await Hub.find(query)
-      .populate('admin', 'fullName avatarUrl username');
+      .populate('admin', 'fullName avatarUrl username')
+      .lean();
     res.json(hubs);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -80,7 +81,8 @@ router.get('/:hubId/messages/:channelId', protect, async (req, res) => {
     })
       .populate('sender', 'fullName avatarUrl username')
       .sort({ createdAt: 1 })
-      .limit(100);
+      .limit(100)
+      .lean();
 
     res.json(messages);
   } catch (error) {

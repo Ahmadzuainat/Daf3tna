@@ -238,11 +238,15 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
 
   Widget _buildPlayerIndicators() {
     bool myTurn = false;
+    final currentUser = ref.read(authRepositoryProvider).currentUser;
+    final uId = currentUser?.id ?? '';
+
     if (mode == 'ai') {
       myTurn = !isAiThinking && aiWinner == null;
     } else {
-      final currentUser = ref.read(authRepositoryProvider).currentUser;
-      myTurn = gameData?['currentTurn']?['_id'] == currentUser?.id;
+      final turnData = gameData?['currentTurn'];
+      final turnId = (turnData is Map ? turnData['_id'] : turnData)?.toString();
+      myTurn = turnId == uId;
     }
 
     return Padding(
@@ -251,24 +255,52 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _indicator('أنت (X)', Colors.blue, myTurn),
-          _indicator(mode == 'ai' ? 'الكمبيوتر (O)' : 'الخصم (O)', Colors.red, !myTurn),
+          _indicator(
+            mode == 'ai' 
+              ? 'الكمبيوتر (O)' 
+              : (_getOpponentName() + ' (O)'), 
+            Colors.red, 
+            !myTurn
+          ),
         ],
       ),
     );
   }
 
+  String _getOpponentName() {
+    final currentUser = ref.read(authRepositoryProvider).currentUser;
+    final uId = currentUser?.id ?? '';
+    final players = gameData?['players'] as List?;
+    if (players == null) return 'الخصم';
+    
+    final opponent = players.firstWhere(
+      (p) {
+        final pId = (p['user'] is Map ? p['user']['_id'] : p['user'])?.toString();
+        return pId != uId;
+      },
+      orElse: () => null,
+    );
+
+    if (opponent != null && opponent['user'] is Map) {
+      return opponent['user']['fullName'] ?? 'الخصم';
+    }
+    return 'الخصم';
+  }
+
   Widget _indicator(String label, Color color, bool active) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(minWidth: 100),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: active ? color : Colors.white.withOpacity(0.1), width: 2),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-          if (active) Text(isAiThinking ? 'يفكر...' : 'دورك', style: const TextStyle(color: Colors.white, fontSize: 10)),
+          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
+          if (active) Text(isAiThinking ? 'يفكر...' : 'دورك', style: const TextStyle(color: Colors.white, fontSize: 9)),
         ],
       ),
     );

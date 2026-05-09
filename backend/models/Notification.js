@@ -14,4 +14,7 @@ const notificationSchema = new mongoose.Schema({
   isRead: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// Optimization Indexes
+notificationSchema.index({ recipient: 1, createdAt: -1 });
+
 export default mongoose.model('Notification', notificationSchema);

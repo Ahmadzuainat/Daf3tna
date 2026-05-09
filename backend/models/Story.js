@@ -13,4 +13,10 @@ const storySchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-export default mongoose.model('Story', storySchema);
+// Optimization Indexes
+storySchema.index({ user: 1, expiresAt: 1 });
+storySchema.index({ batchId: 1, expiresAt: 1 });
+storySchema.index({ expiresAt: 1 });
+
+const Story = mongoose.model('Story', storySchema);
+export default Story;

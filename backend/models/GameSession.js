@@ -51,8 +51,10 @@ const gameSessionSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
-// Index for quick lookup by room code
-gameSessionSchema.index({ roomCode: 1 });
+// Optimization Indexes
+gameSessionSchema.index({ roomCode: 1 }, { unique: true });
+gameSessionSchema.index({ status: 1 });
+gameSessionSchema.index({ batchId: 1 });
 
 const GameSession = mongoose.model('GameSession', gameSessionSchema);
 export default GameSession;

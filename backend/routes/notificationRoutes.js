@@ -9,9 +9,10 @@ router.get('/', protect, async (req, res) => {
   try {
     const notifications = await Notification.find({ recipient: req.user._id })
       .populate('sender', 'fullName username avatarUrl')
-      .populate('post', 'content mediaUrls')
+      .populate('post', 'text mediaUrls') // Changed content to text as per Post model
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(50)
+      .lean();
     res.json(notifications);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

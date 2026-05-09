@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,7 +16,30 @@ const PostSkeleton = () => (
 );
 
 const FeedTab = ({ selectedPost, setSelectedPost }) => {
-  const { posts, stories, fetchPosts, fetchStories, likePost, commentPost, deleteComment, addStory, deleteStory, viewStory, onlineUsers, pagination, setScrollPosition, scrollPositions, deletePost, updatePost, fetchPostDetails } = useAppStore();
+  const { 
+    posts, stories, fetchPosts, fetchStories, likePost, commentPost, 
+    deleteComment, addStory, deleteStory, viewStory, onlineUsers, 
+    pagination, setScrollPosition, scrollPositions, deletePost, 
+    updatePost, fetchPostDetails 
+  } = useAppStore(useShallow(state => ({
+    posts: state.posts,
+    stories: state.stories,
+    fetchPosts: state.fetchPosts,
+    fetchStories: state.fetchStories,
+    likePost: state.likePost,
+    commentPost: state.commentPost,
+    deleteComment: state.deleteComment,
+    addStory: state.addStory,
+    deleteStory: state.deleteStory,
+    viewStory: state.viewStory,
+    onlineUsers: state.onlineUsers,
+    pagination: state.pagination,
+    setScrollPosition: state.setScrollPosition,
+    scrollPositions: state.scrollPositions,
+    deletePost: state.deletePost,
+    updatePost: state.updatePost,
+    fetchPostDetails: state.fetchPostDetails
+  })));
   const { user } = useAuthStore();
   const [commentText, setCommentText] = useState('');
   const [viewingStory, setViewingStory] = useState(null);

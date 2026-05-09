@@ -9,4 +9,9 @@ const messageSchema = new mongoose.Schema({
   isRead: { type: Boolean, default: false }
 }, { timestamps: true });
 
-export default mongoose.model('Message', messageSchema);
+// Optimization Indexes
+messageSchema.index({ chatId: 1, createdAt: -1 });
+messageSchema.index({ sender: 1 });
+
+const Message = mongoose.model('Message', messageSchema);
+export default Message;

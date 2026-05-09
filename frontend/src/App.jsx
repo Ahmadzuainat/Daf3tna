@@ -1,23 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
 
-// Pages
-import AuthPage from './pages/AuthPage';
-import HomePage from './pages/HomePage';
-import AdminHubPage from './pages/AdminHubPage';
-import AdminDashboard from './pages/AdminDashboard'; // Analytics
-import UsersPage from './pages/UsersPage';
-import ReportsPage from './pages/ReportsPage';
-import SecurityPage from './pages/SecurityPage';
-import SiteControlPage from './pages/SiteControlPage';
-import ContentPage from './pages/ContentPage';
-import LogsPage from './pages/LogsPage';
-import AdminHubsPage from './pages/AdminHubsPage';
-import NotFoundPage from './pages/NotFoundPage';
+// Lazy Loaded Pages
+const AuthPage = lazy(() => import('./pages/AuthPage'));
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AdminHubPage = lazy(() => import('./pages/AdminHubPage'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const SecurityPage = lazy(() => import('./pages/SecurityPage'));
+const SiteControlPage = lazy(() => import('./pages/SiteControlPage'));
+const ContentPage = lazy(() => import('./pages/ContentPage'));
+const LogsPage = lazy(() => import('./pages/LogsPage'));
+const AdminHubsPage = lazy(() => import('./pages/AdminHubsPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Layouts & Guards
-import AdminLayout from './components/AdminLayout';
+const AdminLayout = lazy(() => import('./components/AdminLayout'));
 import AdminRoute from './components/AdminRoute';
 import { useAuthStore } from './store/useAuthStore';
 import { useAppStore } from './store/useAppStore';
@@ -26,6 +26,12 @@ import GlobalAlertBanner from './components/common/GlobalAlertBanner';
 
 // Styles
 import './styles/index.css';
+
+const PageLoader = () => (
+  <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-dark)' }}>
+    <div className="spinner"></div>
+  </div>
+);
 
 const ProtectedRoute = ({ children }) => {
   const { token, user } = useAuthStore();
@@ -39,7 +45,6 @@ function App() {
   const [maintenance, setMaintenance] = useState(null);
   const isLoggedIn = !!(token && user);
 
-  // Global Site Status Check
   useEffect(() => {
     if (!isLoggedIn) return;
     const checkStatus = async () => {
@@ -61,7 +66,6 @@ function App() {
     checkStatus();
   }, [user, isLoggedIn]);
 
-  // Sync maintenance state with global store for real-time lockdown
   useEffect(() => {
     if (siteSettings?.maintenanceMode) {
       const isStaff = user && ['moderator', 'admin', 'superadmin'].includes(user.role);
@@ -75,7 +79,6 @@ function App() {
     }
   }, [siteSettings, user]);
 
-  // Apply Theme
   useEffect(() => {
     const theme = user?.theme || 'dark';
     document.body.setAttribute('data-theme', theme);
@@ -85,15 +88,7 @@ function App() {
 
   if (maintenance) {
     return (
-      <div style={{ 
-        height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-        background: 'var(--bg-dark)', color: 'white', textAlign: 'center', padding: '24px', position: 'relative', overflow: 'hidden' 
-      }}>
-        <div style={{ 
-          position: 'absolute', width: '300px', height: '300px', 
-          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
-          filter: 'blur(80px)', zIndex: 0 
-        }} />
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-dark)', color: 'white', textAlign: 'center', padding: '24px', position: 'relative', overflow: 'hidden' }}>
         <div className="auth-glass" style={{ maxWidth: '500px', zIndex: 1 }}>
           <div className="auth-inner">
             <div style={{ fontSize: '4rem', marginBottom: '24px' }}>🛠️</div>
@@ -109,26 +104,27 @@ function App() {
     <Router>
       <GlobalAlertBanner />
       <Toaster richColors position="top-right" closeButton />
-      <Routes>
-        <Route path="/" element={isLoggedIn ? <Navigate to="/home" replace /> : <AuthPage />} />
-        <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-        
-        {/* Admin Command Center Routes */}
-        <Route path="/admin" element={<AdminRoute level="admin"><AdminLayout /></AdminRoute>}>
-          <Route index element={<AdminHubPage />} />
-          <Route path="analytics" element={<AdminRoute level="admin"><AdminDashboard /></AdminRoute>} />
-          <Route path="users" element={<AdminRoute level="admin"><UsersPage /></AdminRoute>} />
-          <Route path="reports" element={<ReportsPage />} />
-          <Route path="hubs" element={<AdminHubsPage />} />
-          <Route path="content" element={<ContentPage />} />
-          <Route path="security" element={<AdminRoute level="superadmin"><SecurityPage /></AdminRoute>} />
-          <Route path="site" element={<AdminRoute level="admin"><SiteControlPage /></AdminRoute>} />
-          <Route path="logs" element={<AdminRoute level="superadmin"><LogsPage /></AdminRoute>} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
-        </Route>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={isLoggedIn ? <Navigate to="/home" replace /> : <AuthPage />} />
+          <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+          
+          <Route path="/admin" element={<AdminRoute level="admin"><AdminLayout /></AdminRoute>}>
+            <Route index element={<AdminHubPage />} />
+            <Route path="analytics" element={<AdminRoute level="admin"><AdminDashboard /></AdminRoute>} />
+            <Route path="users" element={<AdminRoute level="admin"><UsersPage /></AdminRoute>} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="hubs" element={<AdminHubsPage />} />
+            <Route path="content" element={<ContentPage />} />
+            <Route path="security" element={<AdminRoute level="superadmin"><SecurityPage /></AdminRoute>} />
+            <Route path="site" element={<AdminRoute level="admin"><SiteControlPage /></AdminRoute>} />
+            <Route path="logs" element={<AdminRoute level="superadmin"><LogsPage /></AdminRoute>} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }

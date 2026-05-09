@@ -8,7 +8,7 @@ const hubSchema = new mongoose.Schema({
   description: { type: String },
   admin: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   batchId: { type: String, required: true, index: true },
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true }],
   textChannels: [{ name: String }],
   voiceChannels: [{ name: String }]
 }, { timestamps: true });

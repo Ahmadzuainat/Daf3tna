@@ -7,7 +7,9 @@ class SocketService {
   IO.Socket get socket => _socket;
 
   void init(String userId, String batchId) {
-    _socket = IO.io('http://localhost:5002', IO.OptionBuilder()
+    // Optimization: Use the same host as the API, ensuring mobile reachability
+    const baseUrl = 'http://192.168.1.49:5003'; // Matches api_client.dart
+    _socket = IO.io(baseUrl, IO.OptionBuilder()
       .setTransports(['websocket'])
       .disableAutoConnect()
       .build());

@@ -4,30 +4,38 @@ import User from '../models/User.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { uploadToCloudinary } from '../middleware/uploadMiddleware.js';
 
-// @desc    Get Feed Posts (Paginated)
+// @desc    Get Feed Posts (Paginated & Optimized)
 export const getFeed = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const { user } = req;
-  const isSuperAdmin = user.role === 'superadmin';
-  const query = isSuperAdmin ? {} : { batchId: user.batchId };
+  const skip = (page - 1) * limit;
 
-  // Filter posts from private accounts that the user doesn't follow
-  // Exception: My own posts
-  const posts = await Post.find(query)
-    .populate('user', 'fullName username avatarUrl isPrivate followers')
+  // 1. Get the list of IDs I follow to optimize the query
+  const currentUser = await User.findById(user._id).select('following').lean();
+  const followingIds = currentUser?.following || [];
+
+  // 2. Build a high-performance query
+  const batchQuery = user.role === 'superadmin' ? {} : { batchId: user.batchId };
+
+  // 3. Lean query with projection
+  const posts = await Post.find(batchQuery)
+    .populate('user', 'fullName username avatarUrl isPrivate')
     .sort('-createdAt')
-    .skip((page - 1) * limit)
+    .skip(skip)
     .limit(Number(limit))
+    .select('-mediaPublicIds') // Exclude internal IDs
     .lean();
 
+  // 4. Optimization: Memory filter on lean dataset
   const filteredPosts = posts.filter(post => {
-    if (!post.user) return false; // Handle deleted users
+    if (!post.user) return false;
     if (post.user._id.toString() === user._id.toString()) return true;
     if (!post.user.isPrivate) return true;
-    return (post.user.followers || []).some(f => f.toString() === user._id.toString());
+    return followingIds.some(f => f.toString() === post.user._id.toString());
   });
 
-  const total = await Post.countDocuments(query);
+  // 5. Total count for pagination
+  const total = await Post.countDocuments(batchQuery);
 
   res.json({
     success: true,

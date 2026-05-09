@@ -38,7 +38,20 @@ export const updateProfile = asyncHandler(async (req, res) => {
   }
 
   await user.save();
-  res.json({ success: true, data: user });
+  
+  // Return optimized user data
+  const updatedData = {
+    _id: user._id,
+    fullName: user.fullName,
+    bio: user.bio,
+    avatarUrl: user.avatarUrl,
+    coverUrl: user.coverUrl,
+    theme: user.theme,
+    language: user.language,
+    isPrivate: user.isPrivate
+  };
+
+  res.json({ success: true, data: updatedData });
 });
 
 // @desc    Get User Profile by Username

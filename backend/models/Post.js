@@ -13,4 +13,12 @@ const postSchema = new mongoose.Schema({
 // COMPOUND INDEX for feed performance
 postSchema.index({ batchId: 1, createdAt: -1 });
 
-export default mongoose.model('Post', postSchema);
+// Optimization Indexes
+postSchema.index({ user: 1, createdAt: -1 });
+postSchema.index({ type: 1 });
+postSchema.index({ hub: 1 });
+postSchema.index({ createdAt: -1 });
+
+const Post = mongoose.model('Post', postSchema);
+
+export default Post;

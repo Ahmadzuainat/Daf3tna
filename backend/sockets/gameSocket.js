@@ -134,7 +134,8 @@ const registerGameHandlers = (io, socket) => {
       const updatedGame = await GameSession.findOne({ roomCode })
         .populate('players.user', 'fullName profilePicture')
         .populate('currentTurn', 'fullName profilePicture')
-        .populate('winner', 'fullName profilePicture');
+        .populate('winner', 'fullName profilePicture')
+        .lean();
         
       if (updatedGame) {
         io.to(`game_${roomCode}`).emit('game:updated', updatedGame);

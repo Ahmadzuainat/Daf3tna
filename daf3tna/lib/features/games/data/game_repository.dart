@@ -21,9 +21,6 @@ class GameRepository {
 }
 
 final gameRepositoryProvider = Provider((ref) {
-  final dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:5002/api', // Should be dynamic in production
-  ));
-  // Add interceptors for auth if needed
+  final dio = ref.read(apiClientProvider);
   return GameRepository(dio);
 });
