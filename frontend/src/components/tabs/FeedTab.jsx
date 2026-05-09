@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, MessageCircle, Repeat, Plus, Send, X, Camera, Zap, Check, MoreVertical, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import PostCard from '../games/PostCard';
