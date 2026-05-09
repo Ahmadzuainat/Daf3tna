@@ -1,6 +1,8 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 
 // Lazy Loaded Pages
 const AuthPage = lazy(() => import('./pages/AuthPage'));
@@ -125,6 +127,8 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+      <SpeedInsights />
+      <Analytics />
     </Router>
   );
 }
