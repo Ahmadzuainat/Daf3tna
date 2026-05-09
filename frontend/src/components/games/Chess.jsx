@@ -28,21 +28,23 @@ const ChessGame = ({ onBack }) => {
         ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
         : game.gameState.fen;
       
-      // ONLY sync if the server FEN is different AND it's not our turn
-      // This prevents "snapping back" during our own move
       const currentTurnId = game.currentTurn?._id || game.currentTurn;
       const isMyTurn = currentTurnId?.toString() === user?._id?.toString();
 
+      // Sync if board is different AND (it's not my turn OR I haven't moved yet)
+      // This prevents "snap-back" while you're dragging/dropping on your own turn.
       if (chess.fen() !== serverFen) {
-        if (!isMyTurn || chess.history().length === 0) {
+        if (!isMyTurn || fen === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
           chess.load(serverFen);
           setFen(chess.fen());
         }
       }
       
-      // Determine orientation
-      const me = game.players?.find(p => p.user?._id === user?._id);
-      if (me) setOrientation(me.symbol);
+      // Determine orientation based on player assignment
+      const me = game.players?.find(p => (p.user?._id || p.user) === user?._id);
+      if (me && me.symbol) {
+        setOrientation(me.symbol === 'black' ? 'black' : 'white');
+      }
     }
   }, [game?.gameState?.fen, user?._id, game?.players, chess, game?.currentTurn]);
 
@@ -131,6 +133,7 @@ const ChessGame = ({ onBack }) => {
     }
 
     try {
+      // 1. Check if move is legal locally
       const move = chess.move({
         from: sourceSquare,
         to: targetSquare,
@@ -139,19 +142,23 @@ const ChessGame = ({ onBack }) => {
 
       if (move === null) return false;
 
-      // Update UI immediately
+      // 2. Update local UI state
       setFen(chess.fen());
 
+      // 3. Inform backend
       if (mode === 'ai') {
         setTimeout(makeRandomMove, 500);
       } else {
+        // Emit SAN string (like 'e4') or object. 
+        // SAN is more robust for chess.js history sync.
         socket.emit('game:move', { 
           roomCode: game.roomCode, 
-          move: { from: sourceSquare, to: targetSquare, promotion: 'q' } 
+          move: move.san 
         });
       }
       return true;
     } catch (error) {
+      console.error('Chess move error:', error);
       return false;
     }
   }
