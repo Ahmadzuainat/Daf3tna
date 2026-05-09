@@ -50,6 +50,6 @@ router.post('/security/ban-ip', superAdminOnly, banIP);
 router.get('/security/bans', superAdminOnly, getBans);
 router.get('/logs', superAdminOnly, getAdminLogs);
 router.delete('/users/:userId', superAdminOnly, deleteUser);
-router.post('/force-logout-all', superAdminOnly, logoutEveryone); // TASK 8
+router.post('/force-logout-all', adminOnly, logoutEveryone); // TASK 8
 
 export default router;

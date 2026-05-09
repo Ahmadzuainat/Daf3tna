@@ -119,7 +119,19 @@ export const updateSiteSettings = asyncHandler(async (req, res) => {
   let settings = await SiteSetting.findOne();
   if (!settings) settings = new SiteSetting();
 
-  Object.assign(settings, req.body);
+  const allowedFields = [
+    'maintenanceMode', 'maintenanceType', 'maintenanceMessage',
+    'registrationEnabled', 'dmsEnabled', 'hubChatEnabled', 
+    'storiesEnabled', 'uploadsEnabled', 'commentsEnabled', 'notebooksEnabled',
+    'announcement'
+  ];
+
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      settings[field] = req.body[field];
+    }
+  });
+
   settings.updatedBy = req.user._id;
   await settings.save();
 
