@@ -20,6 +20,8 @@ export const getFeed = asyncHandler(async (req, res) => {
   // 2. Build query
   const batchQuery = user.role === 'superadmin' ? {} : { batchId: user.batchId };
 
+  const skip = (Number(page) - 1) * Number(limit);
+
   // 3. Optimized query
   const posts = await Post.find(batchQuery)
     .populate('user', 'fullName username avatarUrl isPrivate')
