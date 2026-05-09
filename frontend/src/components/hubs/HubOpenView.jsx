@@ -173,61 +173,76 @@ const HubOpenView = ({ hub, onBack }) => {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', background: 'var(--bg-dark)', zIndex: 500, position: 'fixed', inset: 0 }}>
-      {/* Sidebar Overlay (Mobile Only) */}
-      {sidebarOpen && (
-        <div 
-          onClick={() => setSidebarOpen(false)}
-          style={{ 
-            position: 'absolute', inset: 0, 
-            background: 'rgba(0,0,0,0.6)', 
-            backdropFilter: 'blur(4px)', 
-            zIndex: 1001,
-            animation: 'fadeIn 0.2s'
-          }} 
-        />
-      )}
-
-      {/* Sidebar */}
+    <div style={{ 
+      display: 'flex', 
+      height: '100vh', 
+      width: '100vw', 
+      background: 'var(--bg-dark)', 
+      zIndex: 500, 
+      position: 'fixed', 
+      inset: 0,
+      overflow: 'hidden' // Prevent horizontal scroll
+    }}>
       <div style={{ 
-        position: 'absolute',
-        top: 0, left: 0, bottom: 0,
-        width: '260px', 
-        background: 'rgba(15,23,42,1)', 
-        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
-        zIndex: 1002,
-        borderRight: '1px solid rgba(255,255,255,0.1)',
+        flex: 1, 
         display: 'flex', 
-        flexDirection: 'column',
-        boxShadow: sidebarOpen ? '20px 0 50px rgba(0,0,0,0.5)' : 'none'
+        flexDirection: 'column', 
+        width: '100%', 
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div style={{ padding: '24px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-           <h3 style={{ color: 'white', fontWeight: 'bold' }}>{hub.name}</h3>
-        </div>
-        <div style={{ flex: 1, padding: '16px 8px' }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '12px', textTransform: 'uppercase' }}>القنوات النصية</p>
-          {(hub.textChannels || []).map(ch => {
-            const chName = getTextChannelName(ch);
-            return (
-              <div key={chName} onClick={() => { setActiveChannel(chName); setSidebarOpen(false); }} style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', marginBottom: '4px', background: activeChannel === chName ? 'rgba(139,92,246,0.2)' : 'transparent', color: activeChannel === chName ? 'white' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Hash size={18} /> {chName}
-              </div>
-            );
-          })}
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 'bold', margin: '24px 0 12px', textTransform: 'uppercase' }}>القنوات الصوتية</p>
-          {(hub.voiceChannels || []).map(ch => {
-            const chName = getTextChannelName(ch);
-            return (
-              <div key={chName} onClick={() => handleJoinVoice(ch)} style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
-                <Mic size={18} /> {chName}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+        {/* Sidebar Overlay (Mobile Only) */}
+        {sidebarOpen && (
+          <div 
+            onClick={() => setSidebarOpen(false)}
+            style={{ 
+              position: 'absolute', inset: 0, 
+              background: 'rgba(0,0,0,0.6)', 
+              backdropFilter: 'blur(4px)', 
+              zIndex: 1001,
+              animation: 'fadeIn 0.2s'
+            }} 
+          />
+        )}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Sidebar */}
+        <div style={{ 
+          position: 'absolute',
+          top: 0, left: 0, bottom: 0,
+          width: '260px', 
+          background: 'rgba(15,23,42,1)', 
+          transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+          zIndex: 1002,
+          borderRight: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex', 
+          flexDirection: 'column',
+          boxShadow: sidebarOpen ? '20px 0 50px rgba(0,0,0,0.5)' : 'none'
+        }}>
+          <div style={{ padding: '24px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+             <h3 style={{ color: 'white', fontWeight: 'bold' }}>{hub.name}</h3>
+          </div>
+          <div style={{ flex: 1, padding: '16px 8px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '12px', textTransform: 'uppercase' }}>القنوات النصية</p>
+            {(hub.textChannels || []).map(ch => {
+              const chName = getTextChannelName(ch);
+              return (
+                <div key={chName} onClick={() => { setActiveChannel(chName); setSidebarOpen(false); }} style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', marginBottom: '4px', background: activeChannel === chName ? 'rgba(139,92,246,0.2)' : 'transparent', color: activeChannel === chName ? 'white' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Hash size={18} /> {chName}
+                </div>
+              );
+            })}
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 'bold', margin: '24px 0 12px', textTransform: 'uppercase' }}>القنوات الصوتية</p>
+            {(hub.voiceChannels || []).map(ch => {
+              const chName = getTextChannelName(ch);
+              return (
+                <div key={chName} onClick={() => handleJoinVoice(ch)} style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+                  <Mic size={18} /> {chName}
+                </div>
+              );
+            })}
+          </div>
+        </div>
         <header style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(15,23,42,0.95)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <ArrowRight size={28} color="white" onClick={onBack} style={{ cursor: 'pointer' }} />
           <Menu size={24} color="white" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ cursor: 'pointer' }} />
