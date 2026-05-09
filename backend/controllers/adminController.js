@@ -110,9 +110,16 @@ export const resolveReport = asyncHandler(async (req, res) => {
 
 // --- PHASE 12: SITE CONTROL ---
 export const getSiteSettings = asyncHandler(async (req, res) => {
-  let settings = await SiteSetting.findOne();
+  const cacheKey = 'site_settings_global';
+  const cached = await getCache(cacheKey);
+  if (cached) return res.json(cached);
+
+  let settings = await SiteSetting.findOne().lean();
   if (!settings) settings = await SiteSetting.create({});
-  res.json({ success: true, data: settings });
+  
+  const response = { success: true, data: settings };
+  await setCache(cacheKey, response, 300); // Cache for 5 mins
+  res.json(response);
 });
 
 export const updateSiteSettings = asyncHandler(async (req, res) => {

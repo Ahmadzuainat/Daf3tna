@@ -17,13 +17,22 @@ export const getFeed = asyncHandler(async (req, res) => {
   const currentUser = await User.findById(user._id).select('following').lean();
   const followingIds = currentUser?.following || [];
 
-  // 2. Build query
+  // 2. Build optimized query
   const batchQuery = user.role === 'superadmin' ? {} : { batchId: user.batchId };
+  
+  // Get all public users in this batch to include in query
+  const publicUsers = await User.find({ ...batchQuery, isPrivate: false }).select('_id').lean();
+  const publicIds = publicUsers.map(u => u._id);
+  
+  const finalQuery = {
+    ...batchQuery,
+    user: { $in: [...followingIds, user._id, ...publicIds] }
+  };
 
   const skip = (Number(page) - 1) * Number(limit);
 
-  // 3. Optimized query
-  const posts = await Post.find(batchQuery)
+  // 3. Optimized query with DB-level filtering
+  const posts = await Post.find(finalQuery)
     .populate('user', 'fullName username avatarUrl isPrivate')
     .sort('-createdAt')
     .skip(skip)
@@ -31,20 +40,11 @@ export const getFeed = asyncHandler(async (req, res) => {
     .select('-mediaPublicIds -__v')
     .lean();
 
-  // 4. Filter
-  const filteredPosts = posts.filter(post => {
-    if (!post.user) return false;
-    const isOwner = post.user._id.toString() === user._id.toString();
-    if (isOwner) return true;
-    if (!post.user.isPrivate) return true;
-    return followingIds.some(f => f.toString() === post.user._id.toString());
-  });
-
-  const total = await Post.countDocuments(batchQuery);
+  const total = await Post.countDocuments(finalQuery);
 
   const responseData = {
     success: true,
-    data: filteredPosts,
+    data: posts,
     pagination: {
       total,
       page: Number(page),

@@ -166,8 +166,14 @@ const FeedTab = ({ selectedPost, setSelectedPost }) => {
     }
   };
 
-  const getImageUrl = (url) => {
+  const getImageUrl = (url, width = 600) => {
     if (!url) return "https://ui-avatars.com/api/?name=User&background=random";
+    
+    // Cloudinary Optimization
+    if (url.includes('cloudinary.com')) {
+      return url.replace('/upload/', `/upload/w_${width},q_auto,f_auto/`);
+    }
+
     if (url.startsWith('http')) return url;
     
     const baseUrl = import.meta.env.VITE_API_URL || 'https://daf3tna.onrender.com';

@@ -92,8 +92,10 @@ const HomePage = () => {
       // Initialize Global Listeners (Alerts, Force Logout, etc.)
       useAppStore.getState().initGlobalSocketListeners(socketInstance);
 
-      fetchHubs();
-      fetchNotifications();
+      // Only fetch if empty to avoid double-loading on quick transitions
+      const { hubs, notifications } = useAppStore.getState();
+      if (hubs.length === 0) fetchHubs();
+      if (notifications.length === 0) fetchNotifications();
 
       socketInstance.on('online_users_update', (users) => setOnlineUsers(users));
       socketInstance.on('dm:newNotification', (msg) => {
