@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:daf3tna/core/widgets/shimmer_loading.dart';
 import 'package:daf3tna/features/auth/data/auth_repository.dart';
+import 'package:daf3tna/core/utils/image_utils.dart';
 
 final storiesProvider = FutureProvider<List<StoryModel>>((ref) {
   return ref.read(socialRepositoryProvider).fetchStories();
@@ -129,7 +130,7 @@ class _StoryCircle extends ConsumerWidget {
                 child: CircleAvatar(
                   radius: 38,
                   backgroundColor: AppColors.surface,
-                  backgroundImage: CachedNetworkImageProvider(story.user.avatarUrl ?? ''),
+                  backgroundImage: CachedNetworkImageProvider(ImageUtils.getOptimizedUrl(story.user.avatarUrl, width: 150)),
                 ),
               ),
             ),

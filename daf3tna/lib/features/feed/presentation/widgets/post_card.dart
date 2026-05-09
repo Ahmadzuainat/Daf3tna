@@ -12,6 +12,7 @@ import 'package:daf3tna/features/feed/data/social_repository.dart';
 import 'package:daf3tna/features/feed/providers/feed_provider.dart';
 import 'package:daf3tna/features/profile/presentation/profile_screen.dart';
 import 'package:glassmorphism/glassmorphism.dart';
+import 'package:daf3tna/core/utils/image_utils.dart';
 
 class PostCard extends StatelessWidget {
   final PostModel post;
@@ -135,7 +136,7 @@ class _PostHeader extends ConsumerWidget {
               child: CircleAvatar(
                 radius: 14,
                 backgroundColor: const Color(0xFF1E293B),
-                backgroundImage: CachedNetworkImageProvider(user.avatarUrl ?? ''),
+                backgroundImage: CachedNetworkImageProvider(ImageUtils.getOptimizedUrl(user.avatarUrl, width: 100)),
               ),
             ),
           ),
@@ -235,8 +236,8 @@ class _PostMedia extends StatelessWidget {
     return AspectRatio(
       aspectRatio: 1, // Square like web template
       child: CachedNetworkImage(
-        imageUrl: url,
-        memCacheWidth: 1000,
+        imageUrl: ImageUtils.getOptimizedUrl(url, width: 800),
+        memCacheWidth: 800,
         placeholder: (context, url) => const ShimmerLoading.rectangular(height: 300),
         errorWidget: (context, url, error) => const Icon(LucideIcons.image),
         fit: BoxFit.cover,
