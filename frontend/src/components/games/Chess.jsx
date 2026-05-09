@@ -100,23 +100,52 @@ const ChessGame = ({ onBack }) => {
     }
   };
 
-  function makeRandomMove() {
+  const evaluateBoard = (chessInstance) => {
+    const values = { p: 10, n: 30, b: 30, r: 50, q: 90, k: 900 };
+    let totalEvaluation = 0;
+    const board = chessInstance.board();
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        const piece = board[i][j];
+        if (piece) {
+          const val = values[piece.type] || 0;
+          totalEvaluation += (piece.color === 'w' ? val : -val);
+        }
+      }
+    }
+    return totalEvaluation;
+  };
+
+  const makeBestMove = () => {
     setIsAiThinking(true);
     setTimeout(() => {
-      const moves = chess.moves();
-      if (chess.isGameOver() || chess.isDraw() || moves.length === 0) {
+      const moves = chess.moves({ verbose: true });
+      if (chess.isGameOver() || moves.length === 0) {
         setIsAiThinking(false);
         return;
       }
-      
-      const randomIndex = Math.floor(Math.random() * moves.length);
-      const move = moves[randomIndex];
-      
-      chess.move(move);
+
+      // Simple one-move lookahead (greedy)
+      // For more depth, minimax could be used but might block UI without WebWorker
+      let bestMove = null;
+      let bestValue = Infinity; // AI is Black by default here
+
+      for (const move of moves) {
+        chess.move(move);
+        const boardValue = evaluateBoard(chess);
+        chess.undo();
+        if (boardValue < bestValue) {
+          bestValue = boardValue;
+          bestMove = move;
+        }
+      }
+
+      const finalMove = bestMove || moves[Math.floor(Math.random() * moves.length)];
+      chess.move(finalMove);
       setFen(chess.fen());
       setIsAiThinking(false);
     }, 500);
-  }
+  };
 
   function onDrop(sourceSquare, targetSquare) {
     const currentTurnId = game?.currentTurn?._id || game?.currentTurn;
@@ -147,7 +176,7 @@ const ChessGame = ({ onBack }) => {
 
       // 3. Inform backend
       if (mode === 'ai') {
-        setTimeout(makeRandomMove, 500);
+        setTimeout(makeBestMove, 500);
       } else {
         // Emit SAN string (like 'e4') or object. 
         // SAN is more robust for chess.js history sync.

@@ -144,26 +144,28 @@ const registerGameHandlers = (io, socket) => {
         }
       );
 
+      const roomName = `game_${roomCode.toUpperCase()}`;
+      
       // Fetch fully populated game to broadcast
-      const updatedGame = await GameSession.findOne({ roomCode })
+      const updatedGame = await GameSession.findOne({ roomCode: roomCode.toUpperCase() })
         .populate('players.user', 'fullName profilePicture')
         .populate('currentTurn', 'fullName profilePicture')
         .populate('winner', 'fullName profilePicture')
         .lean();
         
       if (updatedGame) {
-        io.to(`game_${roomCode}`).emit('game:updated', updatedGame);
+        io.to(roomName).emit('game:updated', updatedGame);
 
         if (updatedGame.status === 'finished') {
-          io.to(`game_${roomCode}`).emit('game:over', { 
+          io.to(roomName).emit('game:over', { 
             winner: updatedGame.winner,
             reason: updatedGame.gameType === 'chess' ? 'Checkmate' : 'Win'
           });
         }
       }
     } catch (error) {
-      console.error('Game move error:', error);
-      socket.emit('game:error', { message: 'حدث خطأ أثناء تنفيذ النقلة' });
+      console.error('Move processing error:', error);
+      socket.emit('game:error', { message: 'خطأ في معالجة الحركة' });
     }
   });
 

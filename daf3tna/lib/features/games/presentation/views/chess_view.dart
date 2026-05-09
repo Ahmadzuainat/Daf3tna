@@ -72,11 +72,61 @@ class _ChessViewState extends ConsumerState<ChessView> {
   void _onMove(String move) {
     if (mode == 'friend') {
       if (gameData?['status'] != 'playing') return;
-      
-      // The backend chess.js move() function accepts SAN strings (e.g. 'e4', 'Nf3')
-      // as well as move objects. We'll pass the move string directly.
       ref.read(socketServiceProvider).makeMove(roomCode!, move);
+    } else if (mode == 'ai') {
+      // Small delay before AI moves
+      Future.delayed(const Duration(milliseconds: 500), () => _makeBestAiMove());
     }
+  }
+
+  void _makeBestAiMove() {
+    if (!mounted || mode != 'ai') return;
+    
+    // Simple AI logic for the Flutter version
+    final game = _controller.getGame();
+    if (game.game_over()) return;
+
+    final moves = game.moves();
+    if (moves.isEmpty) return;
+
+    // Greedy AI (picks move with best material value)
+    String? bestMove;
+    double bestValue = 10000; // AI is black, lower score is better for black in this simple eval
+
+    for (var m in moves) {
+      game.move(m);
+      double eval = _evaluateBoard(game);
+      game.undo();
+      
+      if (eval < bestValue) {
+        bestValue = eval;
+        bestMove = m;
+      }
+    }
+
+    if (bestMove != null) {
+      _controller.makeMove(move: bestMove);
+      setState(() {
+        currentFen = _controller.getFen();
+      });
+    }
+  }
+
+  double _evaluateBoard(dynamic game) {
+    final Map<String, double> values = {
+      'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 900
+    };
+    double total = 0;
+    
+    // In 'chess' package, we can get board state
+    for (int i = 0; i < 128; i++) {
+      final piece = game.board[i];
+      if (piece != null) {
+        double val = values[piece.type] ?? 0;
+        total += (piece.color == 'w' ? val : -val);
+      }
+    }
+    return total;
   }
 
   @override
@@ -107,7 +157,17 @@ class _ChessViewState extends ConsumerState<ChessView> {
         children: [
           _modeButton('ضد صديق', 'Multiplayer Online', LucideIcons.users, Colors.purple, () => setState(() => mode = 'friend')),
           const SizedBox(height: 20),
-          _modeButton('لعب محلي', 'Pass & Play', LucideIcons.swords, Colors.orange, () => setState(() => mode = 'local')),
+          _modeButton('ضد الكمبيوتر', 'Play vs AI', LucideIcons.monitor, Colors.blue, () => setState(() {
+            mode = 'ai';
+            _controller.resetBoard();
+            currentFen = _controller.getFen();
+          })),
+          const SizedBox(height: 20),
+          _modeButton('لعب محلي', 'Pass & Play', LucideIcons.swords, Colors.orange, () => setState(() {
+            mode = 'local';
+            _controller.resetBoard();
+            currentFen = _controller.getFen();
+          })),
         ],
       ),
     );
