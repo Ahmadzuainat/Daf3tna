@@ -49,10 +49,11 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
     });
   }
 
+  String difficulty = 'hard'; // 'easy', 'medium', 'hard'
+
   void _handleAIMove(int index) {
     if (aiBoard[index] != null || aiWinner != null || isAiThinking) return;
 
-    // 1. User Move
     setState(() {
       aiBoard[index] = 'X';
       aiWinner = _checkWinner(aiBoard);
@@ -63,24 +64,92 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
       return;
     }
 
-    // 2. AI Turn - Strict Sequence
     setState(() => isAiThinking = true);
     Timer(const Duration(milliseconds: 600), () {
       if (!mounted) return;
-      final emptyIndices = <int>[];
-      for (int i = 0; i < aiBoard.length; i++) {
-        if (aiBoard[i] == null) emptyIndices.add(i);
+      
+      int? aiIndex;
+      if (difficulty == 'easy') {
+        final emptyIndices = <int>[];
+        for (int i = 0; i < aiBoard.length; i++) {
+          if (aiBoard[i] == null) emptyIndices.add(i);
+        }
+        if (emptyIndices.isNotEmpty) {
+          aiIndex = emptyIndices[Random().nextInt(emptyIndices.length)];
+        }
+      } else if (difficulty == 'medium') {
+        if (Random().nextDouble() > 0.5) {
+          aiIndex = _getBestMove(aiBoard);
+        } else {
+          final emptyIndices = <int>[];
+          for (int i = 0; i < aiBoard.length; i++) {
+            if (aiBoard[i] == null) emptyIndices.add(i);
+          }
+          if (emptyIndices.isNotEmpty) {
+            aiIndex = emptyIndices[Random().nextInt(emptyIndices.length)];
+          }
+        }
+      } else {
+        aiIndex = _getBestMove(aiBoard);
       }
 
-      if (emptyIndices.isNotEmpty) {
-        final aiIndex = emptyIndices[Random().nextInt(emptyIndices.length)];
+      if (aiIndex != null) {
         setState(() {
-          aiBoard[aiIndex] = 'O';
+          aiBoard[aiIndex!] = 'O';
           aiWinner = _checkWinner(aiBoard);
+          if (aiWinner == null && !aiBoard.contains(null)) aiWinner = 'draw';
         });
       }
       setState(() => isAiThinking = false);
     });
+  }
+
+  int? _getBestMove(List<String?> board) {
+    int bestScore = -1000;
+    int? move;
+    for (int i = 0; i < 9; i++) {
+      if (board[i] == null) {
+        board[i] = 'O';
+        int score = _minimax(board, 0, false);
+        board[i] = null;
+        if (score > bestScore) {
+          bestScore = score;
+          move = i;
+        }
+      }
+    }
+    return move;
+  }
+
+  int _minimax(List<String?> board, int depth, bool isMaximizing) {
+    String? result = _checkWinner(board);
+    if (result == 'O') return 10 - depth;
+    if (result == 'X') return depth - 10;
+    if (!board.contains(null)) return 0;
+
+    if (isMaximizing) {
+      int bestScore = -1000;
+      for (int i = 0; i < 9; i++) {
+        if (board[i] == null) {
+          board[i] = 'O';
+          int score = _minimax(board, depth + 1, false);
+          board[i] = null;
+          bestScore = max(score, bestScore);
+        }
+      }
+      return bestScore;
+    } else {
+      int bestScore = 1000;
+      for (int i = 0; i < 9; i++) {
+        if (board[i] == null) {
+          board[i] = 'X';
+          int score = _minimax(board, depth + 1, true);
+          board[i] = null;
+          bestScore = min(score, bestScore);
+        }
+      }
+      return bestScore;
+    }
   }
 
   String? _checkWinner(List<String?> board) {

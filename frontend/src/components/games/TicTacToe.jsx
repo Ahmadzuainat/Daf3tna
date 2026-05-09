@@ -90,11 +90,11 @@ const TicTacToe = ({ onBack }) => {
   const [aiBoard, setAiBoard] = useState(Array(9).fill(null));
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [aiWinner, setAiWinner] = useState(null);
+  const [difficulty, setDifficulty] = useState('hard'); // 'easy', 'medium', 'hard'
 
   const handleAIMove = (index) => {
     if (aiBoard[index] || aiWinner || isAiThinking) return;
     
-    // 1. User Move (X) - Update state immediately
     const updatedBoard = [...aiBoard];
     updatedBoard[index] = 'X';
     setAiBoard(updatedBoard);
@@ -110,19 +110,33 @@ const TicTacToe = ({ onBack }) => {
       return;
     }
 
-    // 2. AI Turn (O) - Use the updatedBoard directly
     setIsAiThinking(true);
     setTimeout(() => {
-      const emptyIndices = updatedBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
-      if (emptyIndices.length > 0) {
-        const aiIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+      let aiIndex;
+      
+      if (difficulty === 'easy') {
+        const emptyIndices = updatedBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
+        aiIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+      } else if (difficulty === 'medium') {
+        // 50% chance of making a smart move
+        if (Math.random() > 0.5) {
+          aiIndex = getBestMove(updatedBoard);
+        } else {
+          const emptyIndices = updatedBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
+          aiIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+        }
+      } else {
+        // Hard / Unbeatable
+        aiIndex = getBestMove(updatedBoard);
+      }
+
+      if (aiIndex !== null && aiIndex !== undefined) {
         updatedBoard[aiIndex] = 'O';
-        
-        // Update state with the final board after AI move
         setAiBoard([...updatedBoard]);
         
         const winO = checkWinner(updatedBoard);
         if (winO) setAiWinner(winO);
+        else if (!updatedBoard.includes(null)) setAiWinner('draw');
       }
       setIsAiThinking(false);
     }, 600);
@@ -134,6 +148,54 @@ const TicTacToe = ({ onBack }) => {
       if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
     }
     return null;
+  };
+
+  const getBestMove = (board) => {
+    let bestScore = -Infinity;
+    let move = null;
+    for (let i = 0; i < 9; i++) {
+      if (board[i] === null) {
+        board[i] = 'O';
+        let score = minimax(board, 0, false);
+        board[i] = null;
+        if (score > bestScore) {
+          bestScore = score;
+          move = i;
+        }
+      }
+    }
+    return move;
+  };
+
+  const minimax = (board, depth, isMaximizing) => {
+    const result = checkWinner(board);
+    if (result === 'O') return 10 - depth;
+    if (result === 'X') return depth - 10;
+    if (!board.includes(null)) return 0;
+
+    if (isMaximizing) {
+      let bestScore = -Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+          board[i] = 'O';
+          let score = minimax(board, depth + 1, false);
+          board[i] = null;
+          bestScore = Math.max(score, bestScore);
+        }
+      }
+      return bestScore;
+    } else {
+      let bestScore = Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+          board[i] = 'X';
+          let score = minimax(board, depth + 1, true);
+          board[i] = null;
+          bestScore = Math.min(score, bestScore);
+        }
+      }
+      return bestScore;
+    }
   };
 
   const renderBoard = () => {
