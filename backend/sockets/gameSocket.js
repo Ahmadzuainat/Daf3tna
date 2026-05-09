@@ -81,24 +81,38 @@ const registerGameHandlers = (io, socket) => {
         const chess = new Chess(currentFen);
         
         try {
-          const result = chess.move(move); // move example: { from: 'e2', to: 'e4' }
+          // Handle both string moves ('e4') and object moves ({from: 'e2', to: 'e4'})
+          const moveData = typeof move === 'string' ? move : {
+            from: move.from,
+            to: move.to,
+            promotion: move.promotion || 'q'
+          };
+
+          const result = chess.move(moveData);
           if (result) {
-            console.log(`✅ Move Valid in ${roomCode}: ${move.from}->${move.to}`);
+            console.log(`✅ Move Valid in ${roomCode}: ${typeof moveData === 'string' ? moveData : moveData.from + '->' + moveData.to}`);
             game.gameState.fen = chess.fen();
-            game.history.push({ move, playedBy: socket.userId });
+            game.history.push({ move: moveData, playedBy: socket.userId });
 
             if (chess.isGameOver()) {
               game.status = 'finished';
-              if (chess.isCheckmate()) game.winner = socket.userId;
+              if (chess.isCheckmate()) {
+                game.winner = socket.userId;
+              } else if (chess.isDraw()) {
+                game.status = 'finished'; // Draw status
+              }
             } else {
+              // Switch Turn
               const otherPlayer = game.players.find(p => p.user.toString() !== socket.userId);
               game.currentTurn = otherPlayer.user;
             }
           } else {
+            console.log(`❌ Invalid Move in ${roomCode} by ${socket.userId}:`, move);
             return socket.emit('game:error', { message: 'حركة غير قانونية' });
           }
         } catch (e) {
-          return socket.emit('game:error', { message: 'خطأ في حركة الشطرنج' });
+          console.error('Chess move error:', e);
+          return socket.emit('game:error', { message: 'خطأ في تنفيذ الحركة' });
         }
       }
 

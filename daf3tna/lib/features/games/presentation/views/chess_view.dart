@@ -52,16 +52,17 @@ class _ChessViewState extends ConsumerState<ChessView> {
       
       final serverFen = data['gameState']?['fen'];
       if (serverFen != null && serverFen != 'start') {
-        // Only update FEN if it's different and NOT our turn (prevent snap-back)
         final currentUser = ref.read(authRepositoryProvider).currentUser;
         final turnData = data['currentTurn'];
         final turnId = (turnData is Map ? turnData['_id'] : turnData)?.toString();
         final isMyTurn = turnId == currentUser?.id;
 
+        // Optimized sync: Only load FEN if it's NOT our turn OR if our board is totally out of sync
+        // This prevents the "snap-back" effect during your own turn animations.
         if (_controller.getFen() != serverFen) {
-          if (!isMyTurn || _controller.getFen() == 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
-             _controller.loadFen(serverFen);
-             currentFen = serverFen;
+          if (!isMyTurn || currentFen == 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
+            _controller.loadFen(serverFen);
+            currentFen = serverFen;
           }
         }
       }
@@ -72,15 +73,9 @@ class _ChessViewState extends ConsumerState<ChessView> {
     if (mode == 'friend') {
       if (gameData?['status'] != 'playing') return;
       
-      // move is in format like "e2e4"
-      final from = move.substring(0, 2);
-      final to = move.substring(2, 4);
-      
-      ref.read(socketServiceProvider).makeMove(roomCode!, {
-        'from': from,
-        'to': to,
-        'promotion': 'q', // Default to queen for simplicity
-      });
+      // The backend chess.js move() function accepts SAN strings (e.g. 'e4', 'Nf3')
+      // as well as move objects. We'll pass the move string directly.
+      ref.read(socketServiceProvider).makeMove(roomCode!, move);
     }
   }
 
@@ -211,10 +206,16 @@ class _ChessViewState extends ConsumerState<ChessView> {
               boardColor: BoardColor.brown,
               boardOrientation: _getOrientation(),
               onMove: () {
-                 final lastMove = _controller.getPossibleMoves().isEmpty ? "" : _controller.getFen(); // This is not ideal but ChessBoard package event is tricky
-                 // Real move handling in onMove is usually done by tracking board state change
-                 // For flutter_chess_board, the move is made, then we broadcast
-                 _onMove(_controller.getHistory().last.move);
+                 // capture the move in SAN format (backend now supports this)
+                 // and send it to the server.
+                 try {
+                   final san = _controller.getSan();
+                   if (san.isNotEmpty) {
+                     _onMove(san.last!);
+                   }
+                 } catch (e) {
+                   print('Move capture error: $e');
+                 }
               },
             ),
           ),
