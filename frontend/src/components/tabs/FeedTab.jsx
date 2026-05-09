@@ -17,24 +17,31 @@ const PostSkeleton = () => (
 );
 
 const FeedTab = ({ selectedPost, setSelectedPost }) => {
-  const posts = useAppStore(state => state.posts);
-  const stories = useAppStore(state => state.stories);
-  const fetchPosts = useAppStore(state => state.fetchPosts);
-  const fetchStories = useAppStore(state => state.fetchStories);
-  const likePost = useAppStore(state => state.likePost);
-  const commentPost = useAppStore(state => state.commentPost);
-  const deleteComment = useAppStore(state => state.deleteComment);
-  const addStory = useAppStore(state => state.addStory);
-  const deleteStory = useAppStore(state => state.deleteStory);
-  const viewStory = useAppStore(state => state.viewStory);
-  const onlineUsers = useAppStore(state => state.onlineUsers);
-  const pagination = useAppStore(state => state.pagination);
-  const setScrollPosition = useAppStore(state => state.setScrollPosition);
-  const scrollPositions = useAppStore(state => state.scrollPositions);
-  const deletePost = useAppStore(state => state.deletePost);
-  const updatePost = useAppStore(state => state.updatePost);
-  const fetchPostDetails = useAppStore(state => state.fetchPostDetails);
-  const followUser = useAppStore(state => state.followUser);
+  const { 
+    posts, stories, fetchPosts, fetchStories, likePost, commentPost, 
+    deleteComment, addStory, deleteStory, viewStory, onlineUsers, 
+    pagination, setScrollPosition, scrollPositions, deletePost, 
+    updatePost, fetchPostDetails, followUser 
+  } = useAppStore(useShallow(state => ({
+    posts: state.posts,
+    stories: state.stories,
+    fetchPosts: state.fetchPosts,
+    fetchStories: state.fetchStories,
+    likePost: state.likePost,
+    commentPost: state.commentPost,
+    deleteComment: state.deleteComment,
+    addStory: state.addStory,
+    deleteStory: state.deleteStory,
+    viewStory: state.viewStory,
+    onlineUsers: state.onlineUsers,
+    pagination: state.pagination,
+    setScrollPosition: state.setScrollPosition,
+    scrollPositions: state.scrollPositions,
+    deletePost: state.deletePost,
+    updatePost: state.updatePost,
+    fetchPostDetails: state.fetchPostDetails,
+    followUser: state.followUser
+  })));
   const { user } = useAuthStore();
   const [commentText, setCommentText] = useState('');
   const [viewingStory, setViewingStory] = useState(null);

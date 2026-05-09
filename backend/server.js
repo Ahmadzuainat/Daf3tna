@@ -62,10 +62,18 @@ const io = new Server(httpServer, {
 
 // Redis Adapter for scalability
 if (process.env.REDIS_URL) {
-  const pubClient = new Redis(process.env.REDIS_URL);
-  const subClient = pubClient.duplicate();
-  io.adapter(createAdapter(pubClient, subClient));
-  console.log('📡 Socket.io Redis Adapter enabled');
+  try {
+    const pubClient = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      connectTimeout: 10000
+    });
+    const subClient = pubClient.duplicate();
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log('📡 Socket.io Redis Adapter enabled');
+  } catch (e) {
+    console.error('⚠️ Redis Socket Adapter failed to connect:', e.message);
+  }
 }
 
 app.use(cors());
@@ -111,7 +119,11 @@ io.on('connection', (socket) => {
     socket.role = userData.role;
     
     // Performance: Use updateOne to minimize overhead
-    await User.updateOne({ _id: userData._id }, { isOnline: true });
+    try {
+      await User.updateOne({ _id: userData._id }, { isOnline: true });
+    } catch (err) {
+      console.error('Error updating user status:', err);
+    }
     
     const [batchOnline, globalOnline] = await Promise.all([
       User.find({ batchId: userData.batchId, isOnline: true }).select('fullName profilePicture username').lean(),
