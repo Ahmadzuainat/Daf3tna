@@ -3,54 +3,42 @@ import Story from '../models/Story.js';
 import GameSession from '../models/GameSession.js';
 import Notification from '../models/Notification.js';
 
-/**
- * Initialize background cron jobs for maintenance and performance.
- */
-export const initCronJobs = () => {
-  console.log('⏰ Initializing production cron jobs...');
-
+const setupCronJobs = () => {
   // 1. Cleanup expired stories every hour
   cron.schedule('0 * * * *', async () => {
     try {
       const now = new Date();
       const result = await Story.deleteMany({ expiresAt: { $lt: now } });
-      if (result.deletedCount > 0) {
-        console.log(`🧹 Cron: Deleted ${result.deletedCount} expired stories.`);
-      }
-    } catch (err) {
-      console.error('❌ Cron Cleanup Stories Error:', err);
+      console.log(`🧹 Cron: Deleted ${result.deletedCount} expired stories`);
+    } catch (error) {
+      console.error('❌ Cron Error (Stories):', error);
     }
   });
 
-  // 2. Cleanup inactive/abandoned game rooms every 6 hours
-  // Delete games that are older than 24 hours and either waiting or finished
+  // 2. Cleanup inactive game rooms every 6 hours
   cron.schedule('0 */6 * * *', async () => {
     try {
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const result = await GameSession.deleteMany({
-        createdAt: { $lt: oneDayAgo },
-        status: { $in: ['waiting', 'finished'] }
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+      const result = await GameSession.deleteMany({ 
+        status: 'waiting', 
+        createdAt: { $lt: sixHoursAgo } 
       });
-      if (result.deletedCount > 0) {
-        console.log(`🧹 Cron: Cleaned up ${result.deletedCount} old game sessions.`);
-      }
-    } catch (err) {
-      console.error('❌ Cron Cleanup Games Error:', err);
+      console.log(`🧹 Cron: Deleted ${result.deletedCount} inactive game rooms`);
+    } catch (error) {
+      console.error('❌ Cron Error (Games):', error);
     }
   });
 
-  // 3. Cleanup old notifications every day at midnight (older than 30 days)
+  // 3. Cleanup old notifications (older than 30 days) every day at midnight
   cron.schedule('0 0 * * *', async () => {
     try {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const result = await Notification.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
-      if (result.deletedCount > 0) {
-        console.log(`🧹 Cron: Deleted ${result.deletedCount} old notifications.`);
-      }
-    } catch (err) {
-      console.error('❌ Cron Cleanup Notifications Error:', err);
+      await Notification.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
+      console.log('🧹 Cron: Cleaned up old notifications');
+    } catch (error) {
+      console.error('❌ Cron Error (Notifications):', error);
     }
   });
 };
 
-export default initCronJobs;
+export default setupCronJobs;

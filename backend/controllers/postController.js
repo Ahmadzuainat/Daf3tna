@@ -3,41 +3,44 @@ import Comment from '../models/Comment.js';
 import User from '../models/User.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { uploadToCloudinary } from '../middleware/uploadMiddleware.js';
+import { getCache, setCache } from '../utils/cacheManager.js';
 
 // @desc    Get Feed Posts (Paginated & Optimized)
 export const getFeed = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const { user } = req;
-  const skip = (page - 1) * limit;
+  const cacheKey = `feed_${user.batchId}_${page}_${limit}_${user.role}`;
+  const cachedData = await getCache(cacheKey);
+  if (cachedData) return res.json(cachedData);
 
-  // 1. Get the list of IDs I follow to optimize the query
+  // 1. Get the list of IDs I follow
   const currentUser = await User.findById(user._id).select('following').lean();
   const followingIds = currentUser?.following || [];
 
-  // 2. Build a high-performance query
+  // 2. Build query
   const batchQuery = user.role === 'superadmin' ? {} : { batchId: user.batchId };
 
-  // 3. Lean query with projection
+  // 3. Optimized query
   const posts = await Post.find(batchQuery)
     .populate('user', 'fullName username avatarUrl isPrivate')
     .sort('-createdAt')
     .skip(skip)
     .limit(Number(limit))
-    .select('-mediaPublicIds') // Exclude internal IDs
+    .select('-mediaPublicIds -__v')
     .lean();
 
-  // 4. Optimization: Memory filter on lean dataset
+  // 4. Filter
   const filteredPosts = posts.filter(post => {
     if (!post.user) return false;
-    if (post.user._id.toString() === user._id.toString()) return true;
+    const isOwner = post.user._id.toString() === user._id.toString();
+    if (isOwner) return true;
     if (!post.user.isPrivate) return true;
     return followingIds.some(f => f.toString() === post.user._id.toString());
   });
 
-  // 5. Total count for pagination
   const total = await Post.countDocuments(batchQuery);
 
-  res.json({
+  const responseData = {
     success: true,
     data: filteredPosts,
     pagination: {
@@ -45,7 +48,12 @@ export const getFeed = asyncHandler(async (req, res) => {
       page: Number(page),
       pages: Math.ceil(total / limit)
     }
-  });
+  };
+
+  // Cache for 60 seconds (feed is dynamic, but 1 min is enough for burst load)
+  await setCache(cacheKey, responseData, 60);
+
+  res.json(responseData);
 });
 
 // @desc    Create Post with Cloudinary

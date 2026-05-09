@@ -8,6 +8,8 @@ import compression from 'compression';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import Redis from 'ioredis';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import initCronJobs from './utils/cronJobs.js';
@@ -57,6 +59,14 @@ const io = new Server(httpServer, {
   pingTimeout: 5000,
   connectTimeout: 10000
 });
+
+// Redis Adapter for scalability
+if (process.env.REDIS_URL) {
+  const pubClient = new Redis(process.env.REDIS_URL);
+  const subClient = pubClient.duplicate();
+  io.adapter(createAdapter(pubClient, subClient));
+  console.log('📡 Socket.io Redis Adapter enabled');
+}
 
 app.use(cors());
 app.use(express.json());
