@@ -174,14 +174,33 @@ const HubOpenView = ({ hub, onBack }) => {
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', background: 'var(--bg-dark)', zIndex: 500, position: 'fixed', inset: 0 }}>
+      {/* Sidebar Overlay (Mobile Only) */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          style={{ 
+            position: 'absolute', inset: 0, 
+            background: 'rgba(0,0,0,0.6)', 
+            backdropFilter: 'blur(4px)', 
+            zIndex: 1001,
+            animation: 'fadeIn 0.2s'
+          }} 
+        />
+      )}
+
       {/* Sidebar */}
       <div style={{ 
-        width: sidebarOpen ? '260px' : '0px', 
-        background: 'rgba(15,23,42,0.98)', 
-        transition: 'width 0.3s', 
-        overflow: 'hidden', 
-        borderRight: sidebarOpen ? '1px solid rgba(255,255,255,0.1)' : 'none',
-        display: 'flex', flexDirection: 'column'
+        position: 'absolute',
+        top: 0, left: 0, bottom: 0,
+        width: '260px', 
+        background: 'rgba(15,23,42,1)', 
+        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+        zIndex: 1002,
+        borderRight: '1px solid rgba(255,255,255,0.1)',
+        display: 'flex', 
+        flexDirection: 'column',
+        boxShadow: sidebarOpen ? '20px 0 50px rgba(0,0,0,0.5)' : 'none'
       }}>
         <div style={{ padding: '24px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
            <h3 style={{ color: 'white', fontWeight: 'bold' }}>{hub.name}</h3>
@@ -242,17 +261,20 @@ const HubOpenView = ({ hub, onBack }) => {
           )}
         </div>
 
-        <div style={{ padding: '16px', background: 'rgba(0,0,0,0.2)' }}>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '24px', padding: '8px 16px', alignItems: 'center' }}>
+        <div style={{ padding: '16px', background: 'rgba(15,23,42,0.9)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '24px', padding: '4px 12px', alignItems: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
             <input 
-              style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', padding: '12px', outline: 'none' }} 
+              style={{ flex: 1, background: 'transparent', border: 'none', color: 'white', padding: '12px', outline: 'none', fontSize: '1rem' }} 
               placeholder={`ارسل رسالة في #${activeChannel}...`} 
               value={newMessage} 
               onChange={handleTyping} 
               onKeyPress={e => e.key === 'Enter' && handleSend()} 
             />
-            <button onClick={handleSend} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-              <Send size={24} color={newMessage ? "var(--primary-blue)" : "var(--text-secondary)"} />
+            <button 
+              onClick={handleSend} 
+              style={{ background: 'var(--primary-blue)', border: 'none', cursor: 'pointer', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', opacity: newMessage ? 1 : 0.5 }}
+            >
+              <Send size={20} color="white" />
             </button>
           </div>
         </div>
