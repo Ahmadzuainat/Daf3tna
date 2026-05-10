@@ -2,6 +2,8 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:daf3tna/core/storage/secure_storage_service.dart';
 import 'package:daf3tna/features/auth/data/auth_repository.dart';
+import 'package:daf3tna/core/utils/toast_service.dart';
+import 'package:flutter/material.dart';
 
 final socketServiceProvider = Provider<SocketService>((ref) {
   return SocketService(ref);
@@ -34,6 +36,19 @@ class SocketService {
 
     _socket!.onDisconnect((_) => print('Socket disconnected'));
     _socket!.onConnectError((err) => print('Socket connect error: $err'));
+
+    // Global Listeners
+    _socket!.on('force:logout', (data) async {
+      final reason = data['reason'] ?? 'تم تسجيل خروجك من قبل المسؤول';
+      await _ref.read(authRepositoryProvider).logout();
+      _ref.read(currentUserProvider.notifier).state = null;
+      ToastService.showError(reason);
+    });
+
+    _socket!.on('global:alert', (data) {
+      final message = data['message'] ?? '';
+      ToastService.showInfo(message);
+    });
   }
 
   void joinHub(String hubId, String channelId) async {
