@@ -10,6 +10,10 @@ import BanList from '../models/BanList.js';
 
 // --- PHASE 4: OVERVIEW ---
 export const getStats = asyncHandler(async (req, res) => {
+  const cacheKey = 'admin_stats_overview';
+  const cached = await getCache(cacheKey);
+  if (cached) return res.json(cached);
+
   const totalUsers = await User.countDocuments();
   const activeToday = await User.countDocuments({ lastSeen: { $gte: new Date(Date.now() - 24*60*60*1000) } });
   const totalPosts = await Post.countDocuments();
@@ -29,10 +33,13 @@ export const getStats = asyncHandler(async (req, res) => {
     return { date: date.toISOString().split('T')[0], count };
   }));
 
-  res.json({
+  const response = {
     success: true,
     data: { totalUsers, activeToday, totalPosts, pendingReports, bannedUsers, userGrowth }
-  });
+  };
+
+  await setCache(cacheKey, response, 300); // Cache for 5 mins
+  res.json(response);
 });
 
 // --- PHASE 5: USERS MANAGEMENT ---
