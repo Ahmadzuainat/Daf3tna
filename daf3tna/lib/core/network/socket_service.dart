@@ -98,8 +98,20 @@ class SocketService {
     _socket?.emit('dm:newMessage', message);
   }
 
+  void emitDMTyping(String chatId, String receiverId, bool isTyping) {
+    if (isTyping) {
+      _socket?.emit('dm:typing', {'chatId': chatId, 'receiverId': receiverId});
+    } else {
+      _socket?.emit('dm:stopTyping', {'chatId': chatId, 'receiverId': receiverId});
+    }
+  }
+
   void onDMReceived(Function(dynamic) callback) {
     _socket?.on('dm:messageReceived', callback);
+  }
+
+  void onDMTypingUpdate(Function(dynamic) callback) {
+    _socket?.on('dm:typingUpdate', callback);
   }
 
   void onNewMessage(Function(dynamic) callback) {
@@ -118,10 +130,24 @@ class SocketService {
     _socket?.on('panic_alert', callback);
   }
 
+  // --- Games ---
+  void joinGame(String roomCode) {
+    _socket?.emit('game:joinRoom', {'roomCode': roomCode});
+  }
+
+  void makeMove(String roomCode, dynamic move) {
+    _socket?.emit('game:move', {'roomCode': roomCode, 'move': move});
+  }
+
+  void leaveGame(String roomCode) {
+    _socket?.emit('game:leave', {'roomCode': roomCode});
+  }
+
   void offChatEvents() {
     _socket?.off('hub:messageReceived');
     _socket?.off('hub:typingUpdate');
     _socket?.off('dm:messageReceived');
+    _socket?.off('dm:typingUpdate');
   }
 
   void disconnect() {
@@ -130,4 +156,5 @@ class SocketService {
   }
 
   bool get isConnected => _socket?.connected ?? false;
+  io.Socket? get socket => _socket;
 }

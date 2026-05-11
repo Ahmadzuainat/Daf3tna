@@ -446,9 +446,132 @@ class _NotebooksViewState extends ConsumerState<NotebooksView> {
     }
   }
 
-  void _openSettings() {
-    // Navigate to settings or show dialog
-    ToastService.showInfo(context, 'إعدادات الدفتر قيد التحسين...');
+  void _openSettings() async {
+    final user = ref.read(currentUserProvider);
+    final notebooksAsync = ref.read(notebookProvider);
+    
+    dynamic myNotebook;
+    notebooksAsync.whenData((items) {
+      myNotebook = items.firstWhere(
+        (nb) => nb['owner']?['_id'] == user?.id,
+        orElse: () => null,
+      );
+    });
+
+    if (myNotebook == null) {
+      // Logic to create one if it doesn't exist could go here, 
+      // but let's assume for now they have one or we just show a "Not found"
+      ToastService.showInfo(context, 'لم نجد دفتراً خاصاً بك بعد.');
+      return;
+    }
+
+    final titleController = TextEditingController(text: myNotebook['title'] ?? '');
+    final quoteController = TextEditingController(text: myNotebook['quote'] ?? '');
+    String selectedColor = myNotebook['color'] ?? '#1E3A8A';
+    bool isPublic = myNotebook['isPublic'] ?? true;
+
+    final updated = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Text('إعدادات دفتري', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text('عنوان التخصص/الدفعة', style: TextStyle(color: AppColors.textDim, fontSize: 12)),
+                const SizedBox(height: 8),
+                _buildDialogTextField(titleController, 'مثلاً: IT • دفعة 2026'),
+                const SizedBox(height: 16),
+                const Text('اقتباسك المفضل', style: TextStyle(color: AppColors.textDim, fontSize: 12)),
+                const SizedBox(height: 8),
+                _buildDialogTextField(quoteController, 'اترك بصمتك...', maxLines: 2),
+                const SizedBox(height: 20),
+                const Text('لون الغلاف', style: TextStyle(color: AppColors.textDim, fontSize: 12)),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _colorOption('#1E3A8A', selectedColor, (c) => setDialogState(() => selectedColor = c)),
+                    _colorOption('#7C3AED', selectedColor, (c) => setDialogState(() => selectedColor = c)),
+                    _colorOption('#DB2777', selectedColor, (c) => setDialogState(() => selectedColor = c)),
+                    _colorOption('#059669', selectedColor, (c) => setDialogState(() => selectedColor = c)),
+                    _colorOption('#D97706', selectedColor, (c) => setDialogState(() => selectedColor = c)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('ظهور للعامة', style: TextStyle(color: Colors.white, fontSize: 14)),
+                  value: isPublic,
+                  activeColor: AppColors.primary,
+                  onChanged: (v) => setDialogState(() => isPublic = v),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('حفظ التغييرات'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (updated == true) {
+      try {
+        await ref.read(vibesRepositoryProvider).updateNotebook(myNotebook['_id'], {
+          'title': titleController.text.trim(),
+          'quote': quoteController.text.trim(),
+          'color': selectedColor,
+          'isPublic': isPublic,
+        });
+        ref.invalidate(notebookProvider);
+        ToastService.showSuccess(context, 'تم تحديث الدفتر بنجاح! ✨');
+      } catch (e) {
+        ToastService.showError(context, 'فشل تحديث البيانات');
+      }
+    }
+  }
+
+  Widget _buildDialogTextField(TextEditingController controller, String hint, {int maxLines = 1}) {
+    return TextField(
+      controller: controller,
+      textAlign: TextAlign.right,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: AppColors.textMuted),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.05),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _colorOption(String hex, String selected, Function(String) onSelect) {
+    final color = Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    final isSelected = hex == selected;
+    return GestureDetector(
+      onTap: () => onSelect(hex),
+      child: Container(
+        width: 32, height: 32,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
+          boxShadow: isSelected ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 10)] : null,
+        ),
+      ),
+    );
   }
 
   Color _parseColor(dynamic color) {

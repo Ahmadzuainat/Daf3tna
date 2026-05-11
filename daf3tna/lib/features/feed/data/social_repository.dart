@@ -25,6 +25,16 @@ class SocialRepository {
     }
   }
 
+  Future<void> addStory(String imageUrl) async {
+    await _dio.post('/stories', data: {'imageUrl': imageUrl});
+  }
+
+  Future<void> viewStory(String id) async {
+    try {
+      await _dio.post('/stories/$id/view');
+    } catch (_) {}
+  }
+
   // --- Notifications ---
   Future<List<NotificationModel>> fetchNotifications() async {
     try {

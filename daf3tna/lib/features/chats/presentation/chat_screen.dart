@@ -28,6 +28,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  bool _isOtherTyping = false;
+  DateTime? _lastTypingTime;
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +61,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         }
       }
     });
+
+    socketService.onDMTypingUpdate((data) {
+      if (!mounted) return;
+      if (data['chatId'] == widget.chat.id) {
+        setState(() {
+          _isOtherTyping = data['isTyping'] ?? false;
+        });
+        _scrollToBottom();
+      }
+    });
+  }
+
+  void _onTypingChanged(String text) {
+    if (text.isEmpty) {
+      ref.read(socketServiceProvider).emitDMTyping(widget.chat.id, widget.otherUser.id, false);
+      _lastTypingTime = null;
+      return;
+    }
+
+    final now = DateTime.now();
+    if (_lastTypingTime == null || now.difference(_lastTypingTime!).inSeconds > 2) {
+      _lastTypingTime = now;
+      ref.read(socketServiceProvider).emitDMTyping(widget.chat.id, widget.otherUser.id, true);
+      
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && _lastTypingTime != null && DateTime.now().difference(_lastTypingTime!).inSeconds >= 3) {
+          ref.read(socketServiceProvider).emitDMTyping(widget.chat.id, widget.otherUser.id, false);
+          _lastTypingTime = null;
+        }
+      });
+    }
   }
 
   void _markAsRead() {
@@ -154,8 +188,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount: messages.length,
+              itemCount: messages.length + (_isOtherTyping ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index == messages.length && _isOtherTyping) {
+                  return _buildTypingIndicator();
+                }
                 final msg = messages[index];
                 final isMe = msg.sender == currentUser?.id;
                 return _buildMessageItem(msg, isMe);
@@ -164,6 +201,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           _buildInputArea(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTypingIndicator() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface.withOpacity(0.5),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomLeft: Radius.zero,
+            bottomRight: Radius.circular(16),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('جاري الكتابة', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary.withOpacity(0.5)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -192,9 +260,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
             const SizedBox(height: 4),
-            Text(
-              intl.DateFormat('HH:mm').format(msg.createdAt),
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 9),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  intl.DateFormat('HH:mm').format(msg.createdAt),
+                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 9),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    msg.isRead ? LucideIcons.checkCheck : LucideIcons.check,
+                    size: 10,
+                    color: msg.isRead ? AppColors.success : Colors.white.withOpacity(0.5),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -223,6 +304,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
               child: TextField(
                 controller: _messageController,
+                onChanged: _onTypingChanged,
                 textAlign: TextAlign.right,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(

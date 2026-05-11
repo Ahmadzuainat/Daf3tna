@@ -4,8 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:daf3tna/core/theme/app_theme.dart';
 import 'package:daf3tna/features/feed/presentation/notifications_screen.dart';
 import 'package:daf3tna/features/feed/presentation/chat_list_screen.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
 
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String? title;
   final bool showLogo;
 
@@ -16,7 +17,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final notificationsAsync = ref.watch(notificationsProvider);
+    final unreadCount = notificationsAsync.maybeWhen(
+      data: (list) => list.where((n) => !n.isRead).length,
+      orElse: () => 0,
+    );
+
     return AppBar(
       backgroundColor: AppColors.background.withOpacity(0.8),
       elevation: 0,
@@ -72,24 +80,25 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 );
               },
             ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: AppColors.error,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.background, width: 1.5),
-                ),
-                constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                child: const Text(
-                  '1',
-                  style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
+            if (unreadCount > 0)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.background, width: 1.5),
+                  ),
+                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                  child: Text(
+                    unreadCount > 9 ? '+9' : '$unreadCount',
+                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
         IconButton(
@@ -101,11 +110,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             );
           },
         ),
-        const Padding(
-          padding: EdgeInsets.only(right: 12, left: 4),
+        Padding(
+          padding: const EdgeInsets.only(right: 12, left: 4),
           child: CircleAvatar(
             radius: 16,
-            backgroundImage: CachedNetworkImageProvider('https://via.placeholder.com/150'),
+            backgroundImage: CachedNetworkImageProvider(user?.avatarUrl ?? 'https://ui-avatars.com/api/?name=${user?.fullName ?? 'U'}'),
           ),
         ),
       ],

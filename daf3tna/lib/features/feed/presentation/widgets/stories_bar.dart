@@ -11,6 +11,10 @@ import 'package:daf3tna/core/widgets/shimmer_loading.dart';
 import 'package:daf3tna/features/auth/data/auth_repository.dart';
 import 'package:daf3tna/core/utils/image_utils.dart';
 
+import 'package:image_picker/image_picker.dart';
+import 'package:daf3tna/features/stories/presentation/story_viewer_screen.dart';
+import 'package:daf3tna/features/vibes/data/vibes_repository.dart';
+
 final storiesProvider = FutureProvider<List<StoryModel>>((ref) {
   return ref.read(socialRepositoryProvider).fetchStories();
 });
@@ -33,7 +37,20 @@ class StoriesBar extends ConsumerWidget {
           itemCount: stories.length + 1,
           itemBuilder: (context, index) {
             if (index == 0) return const _AddStoryItem();
-            return _StoryCircle(story: stories[index - 1]);
+            return _StoryCircle(
+              story: stories[index - 1],
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StoryViewerScreen(
+                      stories: stories,
+                      initialIndex: index - 1,
+                    ),
+                  ),
+                );
+              },
+            );
           },
         ),
         loading: () => ListView.builder(
@@ -53,54 +70,75 @@ class StoriesBar extends ConsumerWidget {
   }
 }
 
-class _AddStoryItem extends StatelessWidget {
+class _AddStoryItem extends ConsumerWidget {
   const _AddStoryItem();
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          Container(
-            width: 84,
-            height: 84,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.02),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 2,
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () => _handlePickImage(context, ref),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.02),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 2,
+                ),
+              ),
+              child: const Center(
+                child: Icon(LucideIcons.plus, color: Colors.white, size: 32),
               ),
             ),
-            child: const Center(
-              child: Icon(LucideIcons.plus, color: Colors.white, size: 32),
+            const SizedBox(height: 8),
+            const Text(
+              'إضافة قصة',
+              style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500),
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'إضافة قصة',
-            style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _handlePickImage(BuildContext context, WidgetRef ref) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    
+    if (image != null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('جاري رفع القصة...')));
+      try {
+        final imageUrl = await ref.read(vibesRepositoryProvider).uploadImage(image.path);
+        await ref.read(socialRepositoryProvider).addStory(imageUrl);
+        ref.invalidate(storiesProvider);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت إضافة القصة بنجاح')));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل رفع القصة')));
+      }
+    }
   }
 }
 
 class _StoryCircle extends ConsumerWidget {
   final StoryModel story;
-  const _StoryCircle({required this.story});
+  final VoidCallback onTap;
+  const _StoryCircle({required this.story, required this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Check if viewed (simplified logic for UI match)
-    const bool isViewed = false; 
     final user = ref.watch(currentUserProvider);
+    final isViewed = story.viewers.contains(user?.id);
     final isAdmin = ['superadmin', 'admin', 'moderator'].contains(user?.role);
     final isOwner = story.user.id == user?.id;
 
     return GestureDetector(
+      onTap: onTap,
       onLongPress: (isAdmin || isOwner) ? () => _handleDelete(context, ref) : null,
       child: Padding(
         padding: const EdgeInsets.only(right: 12),
@@ -125,7 +163,7 @@ class _StoryCircle extends ConsumerWidget {
                 padding: const EdgeInsets.all(2),
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0xFF0A0F1C), // Matching deep dark theme
+                  color: Color(0xFF0A0F1C),
                 ),
                 child: CircleAvatar(
                   radius: 38,

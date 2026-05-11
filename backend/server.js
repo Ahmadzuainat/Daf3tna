@@ -163,6 +163,14 @@ io.on('connection', (socket) => {
     socket.join(conversationId);
   });
 
+  socket.on('dm:typing', ({ chatId, receiverId }) => {
+    socket.to(receiverId).emit('dm:typingUpdate', { chatId, isTyping: true });
+  });
+
+  socket.on('dm:stopTyping', ({ chatId, receiverId }) => {
+    socket.to(receiverId).emit('dm:typingUpdate', { chatId, isTyping: false });
+  });
+
   socket.on('dm:newMessage', (message) => {
     if (message.chatId) socket.to(message.chatId).emit('dm:messageReceived', message);
     if (message.receiver) socket.to(message.receiver).emit('dm:newNotification', message);

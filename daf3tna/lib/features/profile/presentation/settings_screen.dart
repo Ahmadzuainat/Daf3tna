@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:daf3tna/core/theme/app_theme.dart';
 import 'package:daf3tna/features/auth/data/auth_repository.dart';
 import 'package:daf3tna/features/auth/presentation/login_screen.dart';
+import 'package:daf3tna/features/admin/presentation/admin_dashboard_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -52,6 +53,17 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 32),
           _buildSectionTitle('أخرى'),
+          if (ref.watch(currentUserProvider)?.role == 'superadmin')
+            _buildSettingsTile(
+              'لوحة تحكم الـ SuperAdmin',
+              LucideIcons.shieldCheck,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+                );
+              },
+            ),
           _buildSettingsTile(
             'حول التطبيق',
             LucideIcons.info,

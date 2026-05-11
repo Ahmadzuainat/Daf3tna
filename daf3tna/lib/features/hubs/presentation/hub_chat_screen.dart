@@ -134,7 +134,8 @@ class _HubChatScreenState extends ConsumerState<HubChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = ref.watch(hubMessagesProvider(_activeChannel?.id ?? ''));
+    final channelName = _activeChannel?.name ?? '';
+    final messages = ref.watch(hubMessagesProvider(channelName));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -143,7 +144,7 @@ class _HubChatScreenState extends ConsumerState<HubChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(widget.hub.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text('# ${_activeChannel?.name ?? ""}', style: TextStyle(fontSize: 12, color: AppColors.primary.withValues(alpha: 0.7))),
+            Text('# $channelName', style: TextStyle(fontSize: 12, color: AppColors.primary.withValues(alpha: 0.7))),
           ],
         ),
         actions: [

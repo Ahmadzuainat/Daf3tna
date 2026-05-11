@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:daf3tna/core/theme/app_theme.dart';
-import 'package:daf3tna/core/services/socket_service.dart';
+import 'package:daf3tna/core/network/socket_service.dart';
 import 'package:daf3tna/features/games/data/game_repository.dart';
 import 'package:daf3tna/features/auth/data/auth_repository.dart';
 
