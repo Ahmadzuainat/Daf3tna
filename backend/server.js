@@ -84,6 +84,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health Check Endpoint (Lightweight & Public - Place before status middlewares)
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: 'alive',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.use(checkSystemStatus);
 
 app.use('/api/auth', authRoutes);
@@ -176,10 +186,14 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 5002;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/daf3tna';
 
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB Atlas'))
-  .catch((err) => console.error('❌ MongoDB Connection Error:', err));
-
-httpServer.listen(PORT, () => {
+// Optimization: Start Server Immediately, then connect DB
+httpServer.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log('✅ Connected to MongoDB Atlas');
+  } catch (err) {
+    console.error('❌ MongoDB Connection Error:', err);
+  }
 });
