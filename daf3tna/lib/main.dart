@@ -4,12 +4,16 @@ import 'package:daf3tna/core/theme/app_theme.dart';
 import 'package:daf3tna/core/router/app_router.dart';
 import 'package:daf3tna/core/widgets/global_socket_listener.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize timeago with Arabic
   timeago.setLocaleMessages('ar', timeago.ArMessages());
+  
+  // Initialize intl date formatting
+  await initializeDateFormatting('ar', null);
   
   runApp(
     const ProviderScope(

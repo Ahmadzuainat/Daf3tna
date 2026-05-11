@@ -42,12 +42,10 @@ class SocketService {
       final reason = data['reason'] ?? 'تم تسجيل خروجك من قبل المسؤول';
       await _ref.read(authRepositoryProvider).logout();
       _ref.read(currentUserProvider.notifier).state = null;
-      ToastService.showError(reason);
     });
 
     _socket!.on('global:alert', (data) {
-      final message = data['message'] ?? '';
-      ToastService.showInfo(message);
+      // Handled in GlobalSocketListener for UI
     });
   }
 

@@ -7,7 +7,7 @@ import 'package:daf3tna/core/network/cache_interceptor.dart';
 final apiClientProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
-      baseUrl: 'https://daf3tna.onrender.com/api',
+      baseUrl: 'https://daf3tna.onrender.com/api/',
       connectTimeout: const Duration(seconds: 45),
       receiveTimeout: const Duration(seconds: 45),
       headers: {
@@ -54,6 +54,7 @@ final apiClientProvider = Provider<Dio>((ref) {
           response: e.response,
           type: e.type,
           error: message,
+          message: message, // Add this to ensure toString() shows the message
         );
 
         return handler.next(customError);

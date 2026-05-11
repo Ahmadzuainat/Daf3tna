@@ -9,6 +9,7 @@ import 'package:daf3tna/core/widgets/shimmer_loading.dart';
 import 'package:flutter/services.dart';
 import 'package:daf3tna/features/auth/data/auth_repository.dart';
 import 'package:daf3tna/features/feed/data/social_repository.dart';
+import 'package:daf3tna/features/feed/data/feed_repository.dart';
 import 'package:daf3tna/features/feed/providers/feed_provider.dart';
 import 'package:daf3tna/features/profile/presentation/profile_screen.dart';
 import 'package:glassmorphism/glassmorphism.dart';
@@ -40,7 +41,7 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _PostHeader(user: post.user, postId: post.id),
+            _PostHeader(user: post.user, postId: post.id, isAnonymous: post.isAnonymous),
             if (post.mediaUrls.isNotEmpty) _PostMedia(url: post.mediaUrls.first),
             IntrinsicHeight(
               child: Row(
@@ -87,7 +88,8 @@ class PostCard extends StatelessWidget {
 class _PostHeader extends ConsumerWidget {
   final dynamic user;
   final String postId;
-  const _PostHeader({required this.user, required this.postId});
+  final bool isAnonymous;
+  const _PostHeader({required this.user, required this.postId, this.isAnonymous = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -105,7 +107,7 @@ class _PostHeader extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                user.fullName,
+                isAnonymous ? 'مجهول' : user.fullName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -121,23 +123,31 @@ class _PostHeader extends ConsumerWidget {
           ),
           const SizedBox(width: 10),
           GestureDetector(
-            onTap: () => Navigator.push(
+            onTap: isAnonymous ? null : () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => ProfileScreen(username: user.username)),
             ),
             child: Container(
               padding: const EdgeInsets.all(2),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+                  colors: isAnonymous 
+                    ? [const Color(0xFFD946EF), const Color(0xFF701A75)] // Ghost gradient
+                    : [const Color(0xFF3B82F6), const Color(0xFF8B5CF6)],
                 ),
               ),
-              child: CircleAvatar(
-                radius: 14,
-                backgroundColor: const Color(0xFF1E293B),
-                backgroundImage: CachedNetworkImageProvider(ImageUtils.getOptimizedUrl(user.avatarUrl, width: 100)),
-              ),
+              child: isAnonymous 
+                ? const CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Color(0xFF1E293B),
+                    child: Icon(LucideIcons.ghost, size: 14, color: Colors.white),
+                  )
+                : CircleAvatar(
+                    radius: 14,
+                    backgroundColor: const Color(0xFF1E293B),
+                    backgroundImage: CachedNetworkImageProvider(ImageUtils.getOptimizedUrl(user.avatarUrl, width: 100)),
+                  ),
             ),
           ),
         ],
@@ -166,7 +176,7 @@ class _PostOptions extends ConsumerWidget {
           final confirmed = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              color: AppColors.surface,
+              backgroundColor: AppColors.surface,
               title: const Text('حذف المنشور', style: TextStyle(color: Colors.white)),
               content: const Text('هل أنت متأكد من حذف هذا المنشور؟', style: TextStyle(color: Colors.white70)),
               actions: [
@@ -246,14 +256,23 @@ class _PostMedia extends StatelessWidget {
   }
 }
 
-class _PostActions extends ConsumerWidget {
+class _PostActions extends ConsumerStatefulWidget {
   final PostModel post;
   const _PostActions({required this.post});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PostActions> createState() => _PostActionsState();
+}
+
+class _PostActionsState extends ConsumerState<_PostActions> {
+  bool? _isLikedLocal;
+  int? _likesCountLocal;
+
+  @override
+  Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
-    final isLiked = post.likes.contains(currentUser?.id);
+    final isLiked = _isLikedLocal ?? widget.post.likes.contains(currentUser?.id);
+    final likesCount = _likesCountLocal ?? widget.post.likes.length;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -262,21 +281,34 @@ class _PostActions extends ConsumerWidget {
         const Spacer(),
         _ActionItem(
           icon: LucideIcons.messageCircle,
-          label: post.commentsCount.toString(),
-          color: post.commentsCount > 0 ? Colors.white : Colors.white.withValues(alpha: 0.6),
+          label: widget.post.commentsCount.toString(),
+          color: widget.post.commentsCount > 0 ? Colors.white : Colors.white.withValues(alpha: 0.6),
           onTap: () {},
         ),
         const SizedBox(width: 16),
         _ActionItem(
-          icon: isLiked ? LucideIcons.heart : LucideIcons.heart,
-          label: post.likes.length.toString(),
+          icon: LucideIcons.heart,
+          label: likesCount.toString(),
           color: isLiked ? const Color(0xFFEF4444) : Colors.white.withValues(alpha: 0.6),
           isFilled: isLiked,
           onTap: () async {
+            final repo = ref.read(socialRepositoryProvider);
+            
+            setState(() {
+              _isLikedLocal = !isLiked;
+              _likesCountLocal = isLiked ? (likesCount - 1) : (likesCount + 1);
+            });
+
             try {
-              await ref.read(socialRepositoryProvider).toggleLike(post.id);
-              ref.read(feedProvider.notifier).fetchPosts(refresh: false);
-            } catch (e) {}
+              await repo.toggleLike(widget.post.id);
+              // Background refresh if needed, but UI is already updated
+            } catch (e) {
+              // Revert on error
+              setState(() {
+                _isLikedLocal = isLiked;
+                _likesCountLocal = likesCount;
+              });
+            }
           },
         ),
       ],

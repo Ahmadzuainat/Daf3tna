@@ -36,6 +36,18 @@ class _GlobalSocketListenerState extends ConsumerState<GlobalSocketListener> {
       _showPanicDialog(data);
     });
 
+    socketService.socket?.on('force:logout', (data) {
+      if (!mounted) return;
+      final reason = data['reason'] ?? 'تم تسجيل خروجك من قبل المسؤول';
+      ToastService.showError(context, reason);
+    });
+
+    socketService.socket?.on('global:alert', (data) {
+      if (!mounted) return;
+      final message = data['message'] ?? '';
+      ToastService.showInfo(context, message);
+    });
+
     // We can add more listeners here if needed, 
     // although some are already in socket_service.dart (force:logout, global:alert)
     // But those use ToastService which is fine.

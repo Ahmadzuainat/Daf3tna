@@ -11,6 +11,8 @@ import 'package:daf3tna/features/auth/data/auth_repository.dart';
 import 'package:daf3tna/features/feed/presentation/widgets/post_card.dart';
 import 'package:daf3tna/features/profile/presentation/edit_profile_screen.dart';
 import 'package:daf3tna/features/profile/presentation/settings_screen.dart';
+import 'package:daf3tna/features/feed/data/social_repository.dart';
+import 'package:daf3tna/core/utils/toast_service.dart';
 
 final profileProvider = FutureProvider.family<UserModel, String?>((ref, username) async {
   if (username == null) {
@@ -107,7 +109,26 @@ class ProfileScreen extends ConsumerWidget {
                               );
                             })
                           else
-                            _buildActionButton('متابعة', LucideIcons.userPlus, isPrimary: true, onTap: () {}),
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final isFollowing = user.followers.contains(ref.watch(currentUserProvider)?.id);
+                                return _buildActionButton(
+                                  isFollowing ? 'إلغاء المتابعة' : 'متابعة', 
+                                  isFollowing ? LucideIcons.userMinus : LucideIcons.userPlus, 
+                                  isPrimary: !isFollowing,
+                                  isOutline: isFollowing,
+                                  onTap: () async {
+                                    try {
+                                      await ref.read(socialRepositoryProvider).toggleFollow(user.id);
+                                      ref.invalidate(profileProvider(username));
+                                      ToastService.showSuccess(context, isFollowing ? 'تم إلغاء المتابعة' : 'تمت المتابعة بنجاح');
+                                    } catch (e) {
+                                      ToastService.showError(context, 'فشل في إتمام العملية');
+                                    }
+                                  },
+                                );
+                              },
+                            ),
                           const SizedBox(width: 8),
                           InkWell(
                             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen())),
@@ -233,15 +254,15 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, {bool isPrimary = false, VoidCallback? onTap}) {
+  Widget _buildActionButton(String label, IconData icon, {bool isPrimary = false, bool isOutline = false, VoidCallback? onTap}) {
     return Expanded(
       child: Container(
         height: 44,
         decoration: BoxDecoration(
           gradient: isPrimary ? AppColors.primaryGradient : null,
-          color: isPrimary ? null : AppColors.surface,
+          color: isPrimary ? null : (isOutline ? Colors.transparent : AppColors.surface),
           borderRadius: BorderRadius.circular(12),
-          border: isPrimary ? null : Border.all(color: Colors.white10),
+          border: isPrimary ? null : Border.all(color: isOutline ? AppColors.primary : Colors.white10),
         ),
         child: InkWell(
           onTap: onTap,
@@ -249,9 +270,16 @@ class ProfileScreen extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(
+                label, 
+                style: TextStyle(
+                  color: isOutline ? AppColors.primary : Colors.white, 
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 14
+                )
+              ),
               const SizedBox(width: 8),
-              Icon(icon, color: Colors.white, size: 16),
+              Icon(icon, color: isOutline ? AppColors.primary : Colors.white, size: 16),
             ],
           ),
         ),

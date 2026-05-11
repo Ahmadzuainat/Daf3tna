@@ -8,15 +8,15 @@ class GameRepository {
   GameRepository(this._dio);
 
   Future<Response> createGame(String gameType) async {
-    return await _dio.post('/games/create', data: {'gameType': gameType});
+    return await _dio.post('games/create', data: {'gameType': gameType});
   }
 
   Future<Response> joinGame(String roomCode) async {
-    return await _dio.post('/games/join', data: {'roomCode': roomCode});
+    return await _dio.post('games/join', data: {'roomCode': roomCode});
   }
 
   Future<Response> getGameStatus(String roomCode) async {
-    return await _dio.get('/games/$roomCode');
+    return await _dio.get('games/$roomCode');
   }
 }
 

@@ -11,6 +11,7 @@ import 'package:daf3tna/features/vibes/presentation/views/confessions_view.dart'
 import 'package:daf3tna/features/vibes/presentation/views/time_capsule_view.dart';
 import 'package:daf3tna/features/vibes/presentation/views/instants_view.dart';
 import 'package:daf3tna/features/vibes/presentation/views/notebooks_view.dart';
+import 'package:daf3tna/features/vibes/presentation/views/games_view.dart';
 
 class VibeDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> vibe;
@@ -58,6 +59,8 @@ class _VibeDetailScreenState extends ConsumerState<VibeDetailScreen> {
         return ConfessionsView(colors: colors);
       case 'time_capsule':
         return TimeCapsuleView(colors: colors);
+      case 'games':
+        return const GamesView();
       default:
         return Center(
           child: Column(

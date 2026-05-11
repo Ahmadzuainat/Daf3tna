@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:flutter_chess_board/flutter_chess_board.dart';
+import 'package:flutter_chess_board/flutter_chess_board.dart' hide Color;
+import 'package:chess/chess.dart' as chess;
 import 'package:daf3tna/core/theme/app_theme.dart';
 import 'package:daf3tna/core/network/socket_service.dart';
 import 'package:daf3tna/features/games/data/game_repository.dart';
@@ -34,6 +35,7 @@ class _ChessViewState extends ConsumerState<ChessView> {
 
   void _listenToSocket() {
     final socket = ref.read(socketServiceProvider).socket;
+    if (socket == null) return;
 
     socket.on('game:init', (data) => _updateGameState(data));
     socket.on('game:updated', (data) => _updateGameState(data));
@@ -52,13 +54,11 @@ class _ChessViewState extends ConsumerState<ChessView> {
       
       final serverFen = data['gameState']?['fen'];
       if (serverFen != null && serverFen != 'start') {
-        final currentUser = ref.read(authRepositoryProvider).currentUser;
+        final currentUser = ref.read(currentUserProvider);
         final turnData = data['currentTurn'];
         final turnId = (turnData is Map ? turnData['_id'] : turnData)?.toString();
         final isMyTurn = turnId == currentUser?.id;
 
-        // Optimized sync: Only load FEN if it's NOT our turn OR if our board is totally out of sync
-        // This prevents the "snap-back" effect during your own turn animations.
         if (_controller.getFen() != serverFen) {
           if (!isMyTurn || currentFen == 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
             _controller.loadFen(serverFen);
@@ -74,24 +74,25 @@ class _ChessViewState extends ConsumerState<ChessView> {
       if (gameData?['status'] != 'playing') return;
       ref.read(socketServiceProvider).makeMove(roomCode!, move);
     } else if (mode == 'ai') {
-      // Small delay before AI moves
-      Future.delayed(const Duration(milliseconds: 500), () => _makeBestAiMove());
+      final game = chess.Chess.fromFEN(_controller.getFen());
+      // If it's black's turn, it means the user (white) just moved
+      if (game.turn == chess.Color.BLACK && !game.game_over) {
+        Future.delayed(const Duration(milliseconds: 600), () => _makeBestAiMove());
+      }
     }
   }
 
   void _makeBestAiMove() {
     if (!mounted || mode != 'ai') return;
     
-    // Simple AI logic for the Flutter version
-    final game = _controller.getGame();
-    if (game.game_over()) return;
+    final game = chess.Chess.fromFEN(_controller.getFen());
+    if (game.game_over || game.turn == chess.Color.WHITE) return;
 
     final moves = game.moves();
     if (moves.isEmpty) return;
 
-    // Greedy AI (picks move with best material value)
     String? bestMove;
-    double bestValue = 10000; // AI is black, lower score is better for black in this simple eval
+    double bestValue = 10000; 
 
     for (var m in moves) {
       game.move(m);
@@ -105,20 +106,20 @@ class _ChessViewState extends ConsumerState<ChessView> {
     }
 
     if (bestMove != null) {
-      _controller.makeMove(move: bestMove);
+      game.move(bestMove);
       setState(() {
+        _controller.loadFen(game.fen);
         currentFen = _controller.getFen();
       });
     }
   }
 
-  double _evaluateBoard(dynamic game) {
+  double _evaluateBoard(chess.Chess game) {
     final Map<String, double> values = {
       'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 900
     };
     double total = 0;
     
-    // In 'chess' package, we can get board state
     for (int i = 0; i < 128; i++) {
       final piece = game.board[i];
       if (piece != null) {
@@ -266,8 +267,6 @@ class _ChessViewState extends ConsumerState<ChessView> {
               boardColor: BoardColor.brown,
               boardOrientation: _getOrientation(),
               onMove: () {
-                 // capture the move in SAN format (backend now supports this)
-                 // and send it to the server.
                  try {
                    final san = _controller.getSan();
                    if (san.isNotEmpty) {
@@ -287,7 +286,7 @@ class _ChessViewState extends ConsumerState<ChessView> {
 
   PlayerColor _getOrientation() {
     if (mode == 'local') return PlayerColor.white;
-    final currentUser = ref.read(authRepositoryProvider).currentUser;
+    final currentUser = ref.read(currentUserProvider);
     final players = gameData?['players'] as List?;
     if (players == null) return PlayerColor.white;
     
@@ -301,11 +300,11 @@ class _ChessViewState extends ConsumerState<ChessView> {
 
   Widget _buildPlayerIndicators() {
     bool myTurn = false;
-    final currentUser = ref.read(authRepositoryProvider).currentUser;
+    final currentUser = ref.read(currentUserProvider);
     final uId = currentUser?.id ?? '';
 
     if (mode == 'local') {
-      myTurn = true; // Always active in local
+      myTurn = true; 
     } else {
       final turnData = gameData?['currentTurn'];
       final turnId = (turnData is Map ? turnData['_id'] : turnData)?.toString();
@@ -325,7 +324,7 @@ class _ChessViewState extends ConsumerState<ChessView> {
   }
 
   String _getOpponentName() {
-    final currentUser = ref.read(authRepositoryProvider).currentUser;
+    final currentUser = ref.read(currentUserProvider);
     final uId = currentUser?.id ?? '';
     final players = gameData?['players'] as List?;
     if (players == null) return 'الخصم';

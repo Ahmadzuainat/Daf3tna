@@ -14,7 +14,7 @@ class PanicRepository {
 
   Future<List<PanicModel>> fetchPanics() async {
     try {
-      final response = await _dio.get('/vibes/panics');
+      final response = await _dio.get('vibes/panics');
       final List data = response.data;
       return data.map((json) => PanicModel.fromJson(json)).toList();
     } catch (e) {
@@ -24,7 +24,7 @@ class PanicRepository {
 
   Future<PanicModel> createPanic(String text) async {
     try {
-      final response = await _dio.post('/vibes/panics', data: {'text': text});
+      final response = await _dio.post('vibes/panics', data: {'text': text});
       return PanicModel.fromJson(response.data);
     } catch (e) {
       rethrow;
@@ -33,7 +33,7 @@ class PanicRepository {
 
   Future<PanicModel> replyToPanic(String panicId, String text) async {
     try {
-      final response = await _dio.post('/vibes/panics/$panicId/reply', data: {'text': text});
+      final response = await _dio.post('vibes/panics/$panicId/reply', data: {'text': text});
       return PanicModel.fromJson(response.data);
     } catch (e) {
       rethrow;

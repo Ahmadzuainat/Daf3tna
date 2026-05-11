@@ -6,6 +6,7 @@ class StoryModel {
   final String mediaUrl;
   final String? mediaPublicId;
   final List<String> viewers;
+  final List<String> likes;
   final DateTime createdAt;
 
   StoryModel({
@@ -14,6 +15,7 @@ class StoryModel {
     required this.mediaUrl,
     this.mediaPublicId,
     required this.viewers,
+    required this.likes,
     required this.createdAt,
   });
 
@@ -24,6 +26,7 @@ class StoryModel {
       mediaUrl: (json['mediaUrl'] ?? '').toString(),
       mediaPublicId: json['mediaPublicId']?.toString(),
       viewers: List<String>.from(json['viewers'] ?? []),
+      likes: List<String>.from(json['likes'] ?? []),
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
     );
   }

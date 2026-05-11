@@ -218,7 +218,8 @@ class _InstantsViewState extends ConsumerState<InstantsView> {
     setState(() => _isUploading = true);
     try {
       final repo = ref.read(vibesRepositoryProvider);
-      final url = await repo.uploadImage(image.path);
+      final bytes = await image.readAsBytes();
+      final url = await repo.uploadImage(bytes, image.name);
       await repo.createInstant(url);
       ref.invalidate(instantsProvider);
       ToastService.showSuccess(context, 'تمت إضافة اللقطة! ✨');

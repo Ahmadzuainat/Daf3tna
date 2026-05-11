@@ -15,7 +15,7 @@ class ProfileRepository {
 
   Future<UserModel> getProfile(String username) async {
     try {
-      final response = await _dio.get('/users/$username');
+      final response = await _dio.get('users/$username');
       return UserModel.fromJson(response.data);
     } catch (e) {
       rethrow;
@@ -24,7 +24,7 @@ class ProfileRepository {
 
   Future<List<dynamic>> getUserPosts(String userId) async {
     try {
-      final response = await _dio.get('/posts/user/$userId');
+      final response = await _dio.get('posts/user/$userId');
       return response.data ?? [];
     } catch (e) {
       return [];
@@ -47,7 +47,7 @@ class ProfileRepository {
           'cover': await MultipartFile.fromFile(coverPath),
       });
 
-      final response = await _dio.put('/users/profile', data: formData);
+      final response = await _dio.put('users/profile', data: formData);
       return UserModel.fromJson(response.data['data']);
     } catch (e) {
       rethrow;

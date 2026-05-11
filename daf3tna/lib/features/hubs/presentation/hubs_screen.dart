@@ -28,7 +28,7 @@ class _HubsScreenState extends ConsumerState<HubsScreen> {
   void _handleHubAction(HubModel hub) async {
     final currentUser = ref.read(currentUserProvider);
     // Defensive check: ensure both are strings and trimmed
-    final isMember = hub.members.contains(currentUser?.id);
+    final isMember = hub.members.any((m) => m.toString() == currentUser?.id.toString());
 
     if (!isMember) {
       _showJoinDialog(hub);
@@ -231,7 +231,7 @@ class _HubCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
     // Robust check: ensure both IDs are compared as strings to avoid type mismatches
-    final isJoined = hub.members.contains(currentUser?.id);
+    final isJoined = hub.members.any((m) => m.toString() == currentUser?.id.toString());
     
     final gradient = hub.color.startsWith('#') 
       ? LinearGradient(colors: [_parseColor(hub.color), _parseColor(hub.color).withValues(alpha: 0.7)])

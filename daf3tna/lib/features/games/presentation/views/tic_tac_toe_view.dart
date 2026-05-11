@@ -35,6 +35,7 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
 
   void _listenToSocket() {
     final socket = ref.read(socketServiceProvider).socket;
+    if (socket == null) return;
     
     socket.on('game:init', (data) {
       if (mounted) setState(() => gameData = data);
@@ -307,7 +308,7 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
 
   Widget _buildPlayerIndicators() {
     bool myTurn = false;
-    final currentUser = ref.read(authRepositoryProvider).currentUser;
+    final currentUser = ref.read(currentUserProvider);
     final uId = currentUser?.id ?? '';
 
     if (mode == 'ai') {
@@ -337,7 +338,7 @@ class _TicTacToeViewState extends ConsumerState<TicTacToeView> {
   }
 
   String _getOpponentName() {
-    final currentUser = ref.read(authRepositoryProvider).currentUser;
+    final currentUser = ref.read(currentUserProvider);
     final uId = currentUser?.id ?? '';
     final players = gameData?['players'] as List?;
     if (players == null) return 'الخصم';

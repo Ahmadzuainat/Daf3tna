@@ -14,7 +14,7 @@ class SearchRepository {
 
   Future<List<UserModel>> searchUsers(String query, {int page = 1, int limit = 15}) async {
     try {
-      final response = await _dio.get('/users/search', queryParameters: {
+      final response = await _dio.get('users/search', queryParameters: {
         'q': query,
         'page': page,
         'limit': limit
@@ -31,7 +31,7 @@ class SearchRepository {
   /* ... getSearchHistory / addToSearchHistory ... */
   Future<List<UserModel>> getSearchHistory() async {
     try {
-      final response = await _dio.get('/users/search-history');
+      final response = await _dio.get('users/search-history');
       if (response.data is List) {
         return (response.data as List).map((u) => UserModel.fromJson(u)).toList();
       }
@@ -43,13 +43,13 @@ class SearchRepository {
 
   Future<void> addToSearchHistory(String userId) async {
     try {
-      await _dio.post('/users/search-history', data: {'userId': userId});
+      await _dio.post('users/search-history', data: {'userId': userId});
     } catch (_) {}
   }
 
   Future<List<UserModel>> getBatchUsers({int page = 1, int limit = 20}) async {
     try {
-      final response = await _dio.get('/users/batch', queryParameters: {
+      final response = await _dio.get('users/batch', queryParameters: {
         'page': page,
         'limit': limit
       });

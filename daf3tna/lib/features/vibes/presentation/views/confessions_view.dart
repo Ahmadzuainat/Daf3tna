@@ -7,6 +7,7 @@ import 'package:daf3tna/features/vibes/presentation/vibes_provider.dart';
 import 'package:daf3tna/core/utils/toast_service.dart';
 import 'package:daf3tna/features/auth/presentation/auth_provider.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
 
 class ConfessionsView extends ConsumerStatefulWidget {
   final List<Color> colors;
@@ -130,7 +131,7 @@ class _ConfessionsViewState extends ConsumerState<ConfessionsView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (['superadmin', 'admin', 'moderator'].contains(ref.watch(authProvider).user?.role))
+              if (['superadmin', 'admin', 'moderator'].contains(ref.watch(currentUserProvider)?.role))
                 IconButton(
                   onPressed: () => _handleDelete(item['_id']),
                   icon: const Icon(LucideIcons.trash2, color: Colors.redAccent, size: 20),

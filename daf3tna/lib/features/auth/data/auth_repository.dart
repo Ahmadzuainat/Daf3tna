@@ -18,7 +18,7 @@ class AuthRepository {
 
   Future<UserModel> login(String email, String password) async {
     try {
-      final response = await _dio.post('/auth/login', data: {
+      final response = await _dio.post('auth/login', data: {
         'email': email,
         'password': password,
       });
@@ -48,7 +48,7 @@ class AuthRepository {
 
   Future<void> register(Map<String, dynamic> data) async {
     try {
-      await _dio.post('/auth/register', data: data);
+      await _dio.post('auth/register', data: data);
     } catch (e) {
       rethrow;
     }
@@ -56,7 +56,7 @@ class AuthRepository {
 
   Future<void> verifyOtp(String email, String otp) async {
     try {
-      await _dio.post('/auth/verify-otp', data: {
+      await _dio.post('auth/verify-otp', data: {
         'email': email,
         'otp': otp,
       });

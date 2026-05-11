@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:daf3tna/core/theme/app_theme.dart';
-import 'package:daf3tna/core/services/socket_service.dart';
+import 'package:daf3tna/core/network/socket_service.dart';
 import 'package:daf3tna/features/auth/data/auth_repository.dart';
 import 'package:daf3tna/features/games/presentation/views/tic_tac_toe_view.dart';
 import 'package:daf3tna/features/games/presentation/views/chess_view.dart';
@@ -20,28 +20,15 @@ class _GamesViewState extends ConsumerState<GamesView> {
     super.initState();
     // Initialize socket when entering games section
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(authRepositoryProvider).currentUser;
-      if (user != null) {
-        ref.read(socketServiceProvider).init(user.id, user.batchId ?? '');
-      }
+      ref.read(socketServiceProvider).connect();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(LucideIcons.arrowRight, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('الألعاب الجماعية', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
-      body: Padding(
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [

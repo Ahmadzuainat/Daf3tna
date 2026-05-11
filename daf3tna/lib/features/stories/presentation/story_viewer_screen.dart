@@ -4,6 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:daf3tna/core/theme/app_theme.dart';
 import 'package:daf3tna/models/social_models.dart';
 import 'package:daf3tna/features/feed/data/social_repository.dart';
+import 'package:daf3tna/features/auth/data/auth_repository.dart';
+import 'package:daf3tna/features/feed/presentation/widgets/stories_bar.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 
 class StoryViewerScreen extends ConsumerStatefulWidget {
@@ -159,6 +162,52 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+            // Bottom Actions: Like
+            Positioned(
+              bottom: 40,
+              left: 20,
+              right: 20,
+              child: Row(
+                children: [
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () async {
+                      HapticFeedback.mediumImpact();
+                      try {
+                        await ref.read(socialRepositoryProvider).toggleStoryLike(story.id);
+                        setState(() {
+                          final userId = ref.read(currentUserProvider)?.id;
+                          if (userId != null) {
+                            if (story.likes.contains(userId)) {
+                              story.likes.remove(userId);
+                            } else {
+                              story.likes.add(userId);
+                            }
+                          }
+                        });
+                        ref.invalidate(storiesProvider);
+                      } catch (e) {}
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black38,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Icon(
+                        story.likes.contains(ref.watch(currentUserProvider)?.id)
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: story.likes.contains(ref.watch(currentUserProvider)?.id)
+                            ? Colors.red
+                            : Colors.white,
+                      ),
+                    ),
                   ),
                 ],
               ),

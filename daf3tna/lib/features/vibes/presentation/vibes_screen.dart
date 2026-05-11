@@ -60,6 +60,13 @@ class VibesScreen extends ConsumerWidget {
         'icon': LucideIcons.lock,
         'colors': [const Color(0xFF10B981), const Color(0xFF065F46)]
       },
+      {
+        'id': 'games',
+        'title': 'ألعاب الدفعة',
+        'desc': 'تحدّ أصدقاءك في الشطرنج أو إكس أو',
+        'icon': LucideIcons.gamepad2,
+        'colors': [const Color(0xFF6366F1), const Color(0xFF4338CA)]
+      },
     ];
 
     final screenWidth = MediaQuery.of(context).size.width;

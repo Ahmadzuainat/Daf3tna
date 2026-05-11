@@ -7,6 +7,7 @@ class PostModel {
   final List<String> mediaUrls;
   final List<String> likes;
   final int commentsCount;
+  final bool isAnonymous;
   final DateTime createdAt;
 
   PostModel({
@@ -16,6 +17,7 @@ class PostModel {
     required this.mediaUrls,
     required this.likes,
     required this.commentsCount,
+    this.isAnonymous = false,
     required this.createdAt,
   });
 
@@ -27,6 +29,7 @@ class PostModel {
       mediaUrls: List<String>.from(json['mediaUrls'] ?? []),
       likes: List<String>.from(json['likes'] ?? []),
       commentsCount: json['commentsCount'] ?? 0,
+      isAnonymous: json['isAnonymous'] ?? false,
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
     );
   }

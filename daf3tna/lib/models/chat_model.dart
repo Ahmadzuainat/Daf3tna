@@ -51,6 +51,7 @@ class MessageModel {
   final String sender;
   final String content;
   final String? type;
+  final bool isRead;
   final DateTime createdAt;
 
   MessageModel({
@@ -58,16 +59,18 @@ class MessageModel {
     required this.sender,
     required this.content,
     this.type,
+    this.isRead = false,
     required this.createdAt,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
-      id: json['_id'],
-      sender: json['sender'] is Map ? json['sender']['_id'] : json['sender'],
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      sender: json['sender'] is Map ? json['sender']['_id'] : (json['sender'] ?? '').toString(),
       content: json['content'] ?? '',
       type: json['type'] ?? 'text',
-      createdAt: DateTime.parse(json['createdAt']),
+      isRead: json['isRead'] ?? false,
+      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -77,6 +80,7 @@ class MessageModel {
       'sender': sender,
       'content': content,
       'type': type,
+      'isRead': isRead,
       'createdAt': createdAt.toIso8601String(),
     };
   }

@@ -29,7 +29,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     try {
       final status = await ref.read(adminRepositoryProvider).getSystemStatus();
       setState(() {
-        _isMaintenance = status['isUnderMaintenance'] ?? false;
+        _isMaintenance = status['maintenanceMode'] ?? false;
         _messageController.text = status['maintenanceMessage'] ?? 'الموقع في صيانة حالياً';
         _isLoading = false;
       });

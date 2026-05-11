@@ -37,7 +37,10 @@ class HubModel {
       description: json['description']?.toString(),
       admin: json['admin'] != null ? UserModel.fromJson(json['admin'] as Map<String, dynamic>) : null,
       batchId: (json['batchId'] ?? '').toString(),
-      members: List<String>.from(json['members'] ?? []),
+      members: (json['members'] as List? ?? []).map((m) {
+        if (m is Map) return (m['_id'] ?? m['id'] ?? '').toString();
+        return m.toString();
+      }).toList(),
       textChannels: (json['textChannels'] as List? ?? [])
           .map((e) => HubChannel.fromJson(e as Map<String, dynamic>))
           .toList(),

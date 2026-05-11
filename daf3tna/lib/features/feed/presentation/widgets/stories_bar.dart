@@ -114,7 +114,8 @@ class _AddStoryItem extends ConsumerWidget {
     if (image != null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('جاري رفع القصة...')));
       try {
-        final imageUrl = await ref.read(vibesRepositoryProvider).uploadImage(image.path);
+        final bytes = await image.readAsBytes();
+        final imageUrl = await ref.read(vibesRepositoryProvider).uploadImage(bytes, image.name);
         await ref.read(socialRepositoryProvider).addStory(imageUrl);
         ref.invalidate(storiesProvider);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت إضافة القصة بنجاح')));

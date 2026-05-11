@@ -14,7 +14,7 @@ class FeedRepository {
 
   Future<List<PostModel>> fetchPosts({int page = 1, int limit = 10}) async {
     try {
-      final response = await _dio.get('/posts', queryParameters: {'page': page, 'limit': limit});
+      final response = await _dio.get('posts', queryParameters: {'page': page, 'limit': limit});
       // The backend returns { success: true, data: [...] }
       final List data = response.data['data'] ?? [];
       return data
@@ -27,10 +27,10 @@ class FeedRepository {
   }
 
   Future<void> deletePost(String id) async {
-    await _dio.delete('/posts/$id');
+    await _dio.delete('posts/$id');
   }
 
   Future<void> deleteComment(String postId, String commentId) async {
-    await _dio.delete('/posts/$postId/comments/$commentId');
+    await _dio.delete('posts/$postId/comments/$commentId');
   }
 }

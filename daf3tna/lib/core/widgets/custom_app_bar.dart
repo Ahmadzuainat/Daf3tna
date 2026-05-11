@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:daf3tna/core/theme/app_theme.dart';
 import 'package:daf3tna/features/feed/presentation/notifications_screen.dart';
 import 'package:daf3tna/features/feed/presentation/chat_list_screen.dart';
 import 'package:daf3tna/features/auth/data/auth_repository.dart';
+import 'package:daf3tna/features/feed/providers/feed_provider.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String? title;

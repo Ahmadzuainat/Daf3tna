@@ -14,7 +14,7 @@ class HubRepository {
 
   Future<List<HubModel>> fetchHubs() async {
     try {
-      final response = await _dio.get('/hubs');
+      final response = await _dio.get('hubs');
       final List data = response.data ?? [];
       return data.map((json) => HubModel.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -24,7 +24,7 @@ class HubRepository {
 
   Future<HubModel> joinHub(String hubId) async {
     try {
-      final response = await _dio.post('/hubs/$hubId/join');
+      final response = await _dio.post('hubs/$hubId/join');
       return HubModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       rethrow;
@@ -33,7 +33,7 @@ class HubRepository {
 
   Future<List<HubMessageModel>> fetchMessages(String hubId, String channelId) async {
     try {
-      final response = await _dio.get('/hubs/$hubId/messages/$channelId');
+      final response = await _dio.get('hubs/$hubId/messages/$channelId');
       final List data = response.data ?? [];
       return data.map((json) => HubMessageModel.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -49,7 +49,7 @@ class HubRepository {
     String? mediaType,
   }) async {
     try {
-      final response = await _dio.post('/hubs/$hubId/messages', data: {
+      final response = await _dio.post('hubs/$hubId/messages', data: {
         'channelId': channelId,
         'text': text,
         'mediaUrl': mediaUrl,

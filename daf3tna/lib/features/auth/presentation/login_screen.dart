@@ -25,7 +25,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _passwordController.text,
       );
       if (mounted) {
-        context.go('/home');
+        context.go('/');
       }
     } catch (e) {
       if (mounted) {
