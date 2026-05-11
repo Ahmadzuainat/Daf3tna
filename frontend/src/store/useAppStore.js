@@ -20,7 +20,9 @@ export const useAppStore = create((set, get) => ({
   socket: null,
   scrollPositions: {}, // tabId -> scrollY
   pagination: {
-    posts: { page: 1, hasMore: true, total: 0 }
+    posts: { page: 1, hasMore: true, total: 0, isLoading: false },
+    users: { page: 1, hasMore: true, total: 0, isLoading: false },
+    search: { page: 1, hasMore: true, total: 0, isLoading: false }
   },
   siteSettings: null,
   globalAlert: null,
@@ -60,22 +62,28 @@ export const useAppStore = create((set, get) => ({
 
   /* ─────────── POSTS ─────────── */
   fetchPosts: async (page = 1, force = false) => {
-    const { pagination, posts } = get();
+    const { pagination } = get();
+    if (!force && pagination.posts.isLoading) return;
     if (!force && page > 1 && !pagination.posts.hasMore) return;
+
+    set(state => ({ pagination: { ...state.pagination, posts: { ...state.pagination.posts, isLoading: true } } }));
 
     try {
       const res = await api.get(`/posts?page=${page}&limit=10`);
       const newPosts = res.data.data;
       const meta = res.data.pagination;
 
-      set({ 
-        posts: page === 1 ? newPosts : [...posts, ...newPosts],
+      set(state => ({ 
+        posts: page === 1 ? newPosts : [...state.posts, ...newPosts],
         pagination: {
-          ...pagination,
-          posts: { page: meta.page, hasMore: meta.page < meta.pages, total: meta.total }
+          ...state.pagination,
+          posts: { page: meta.page, hasMore: meta.page < meta.pages, total: meta.total, isLoading: false }
         }
-      });
-    } catch (err) { console.error('fetchPosts:', err); }
+      }));
+    } catch (err) { 
+      console.error('fetchPosts:', err); 
+      set(state => ({ pagination: { ...state.pagination, posts: { ...state.pagination.posts, isLoading: false } } }));
+    }
   },
 
   handleNewPost: (post) => {

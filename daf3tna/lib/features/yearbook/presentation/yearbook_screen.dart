@@ -16,28 +16,62 @@ class YearbookScreen extends ConsumerStatefulWidget {
 
 class _YearbookScreenState extends ConsumerState<YearbookScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   List<UserModel> _allUsers = [];
   List<UserModel> _filteredUsers = [];
   bool _isLoading = true;
+  bool _isMoreLoading = false;
+  int _currentPage = 1;
+  bool _hasMore = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchUsers();
+    _fetchUsers(1);
+    _scrollController.addListener(_onScroll);
   }
 
-  Future<void> _fetchUsers() async {
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
+        _hasMore &&
+        !_isMoreLoading) {
+      _fetchUsers(_currentPage + 1);
+    }
+  }
+
+  Future<void> _fetchUsers(int page) async {
+    if (page > 1) {
+      setState(() => _isMoreLoading = true);
+    }
+
     try {
-      final users = await ref.read(searchRepositoryProvider).getBatchUsers();
+      final users = await ref.read(searchRepositoryProvider).getBatchUsers(page: page);
       if (mounted) {
         setState(() {
-          _allUsers = users;
-          _filteredUsers = users;
+          if (page == 1) {
+            _allUsers = users;
+          } else {
+            _allUsers.addAll(users);
+          }
+          _filteredUsers = _allUsers;
           _isLoading = false;
+          _isMoreLoading = false;
+          _currentPage = page;
+          _hasMore = users.length == 20;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() {
+        _isLoading = false;
+        _isMoreLoading = false;
+      });
     }
   }
 
@@ -106,14 +140,18 @@ class _YearbookScreenState extends ConsumerState<YearbookScreen> {
                     : _filteredUsers.isEmpty
                         ? const Center(child: Text('لا يوجد طلاب', style: TextStyle(color: AppColors.textDim)))
                         : GridView.builder(
+                            controller: _scrollController,
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               childAspectRatio: 0.8,
                               crossAxisSpacing: 16,
                               mainAxisSpacing: 16,
                             ),
-                            itemCount: _filteredUsers.length,
+                            itemCount: _filteredUsers.length + (_isMoreLoading ? 2 : 0),
                             itemBuilder: (context, index) {
+                              if (index >= _filteredUsers.length) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
                               return _buildYearbookCard(_filteredUsers[index]);
                             },
                           ),

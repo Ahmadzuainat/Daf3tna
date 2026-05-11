@@ -17,6 +17,9 @@ router.get('/search', protect, async (req, res) => {
     const baseQuery = isSuperAdmin ? {} : { batchId: req.user.batchId };
     
     let searchQuery = { ...baseQuery };
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
     
     if (q) {
       searchQuery.$or = [
@@ -34,7 +37,8 @@ router.get('/search', protect, async (req, res) => {
 
     const users = await User.find(searchQuery)
       .select('fullName username avatarUrl bio major followers isPrivate')
-      .limit(15)
+      .skip(skip)
+      .limit(limit)
       .lean();
 
     res.json(users);
@@ -46,16 +50,23 @@ router.get('/search', protect, async (req, res) => {
 // Me - Restore Session
 router.get('/me', protect, (req, res) => res.json(req.user));
 
-// Yearbook - Get all users in batch (Optimized)
+// Yearbook - Get all users in batch (Optimized with Pagination)
 router.get('/batch', protect, async (req, res) => {
   try {
     const isSuperAdmin = req.user.role === 'superadmin';
     const query = isSuperAdmin ? {} : { batchId: req.user.batchId };
     
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20; // Default 20 users per page
+    const skip = (page - 1) * limit;
+
     const users = await User.find(query)
       .select('fullName username avatarUrl bio major followers following isPrivate')
       .sort({ fullName: 1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
+      
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

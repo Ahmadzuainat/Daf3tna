@@ -21,12 +21,18 @@ router.put('/:id/like', protect, toggleLike);
 // Comment
 router.post('/:id/comment', protect, addComment);
 
-// Profile Posts
+// Profile Posts (Optimized with Pagination)
 router.get('/user/:userId', protect, async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const posts = await Post.find({ user: req.params.userId })
       .populate('user', 'fullName avatarUrl username')
       .sort('-createdAt')
+      .skip(skip)
+      .limit(limit)
       .lean();
     res.json(posts);
   } catch (error) {

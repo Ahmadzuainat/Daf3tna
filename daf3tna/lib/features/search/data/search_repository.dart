@@ -12,9 +12,13 @@ class SearchRepository {
 
   SearchRepository(this._dio);
 
-  Future<List<UserModel>> searchUsers(String query) async {
+  Future<List<UserModel>> searchUsers(String query, {int page = 1, int limit = 15}) async {
     try {
-      final response = await _dio.get('/users/search', queryParameters: {'q': query});
+      final response = await _dio.get('/users/search', queryParameters: {
+        'q': query,
+        'page': page,
+        'limit': limit
+      });
       if (response.data is List) {
         return (response.data as List).map((u) => UserModel.fromJson(u)).toList();
       }
@@ -24,6 +28,7 @@ class SearchRepository {
     }
   }
 
+  /* ... getSearchHistory / addToSearchHistory ... */
   Future<List<UserModel>> getSearchHistory() async {
     try {
       final response = await _dio.get('/users/search-history');
@@ -42,9 +47,12 @@ class SearchRepository {
     } catch (_) {}
   }
 
-  Future<List<UserModel>> getBatchUsers() async {
+  Future<List<UserModel>> getBatchUsers({int page = 1, int limit = 20}) async {
     try {
-      final response = await _dio.get('/users/batch');
+      final response = await _dio.get('/users/batch', queryParameters: {
+        'page': page,
+        'limit': limit
+      });
       if (response.data is List) {
         return (response.data as List).map((u) => UserModel.fromJson(u)).toList();
       }

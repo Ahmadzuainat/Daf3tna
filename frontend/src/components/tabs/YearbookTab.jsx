@@ -4,13 +4,20 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { Search as SearchIcon } from 'lucide-react';
 
 const YearbookTab = ({ onUserClick }) => {
-  const { users, fetchUsers } = useAppStore();
+  const { users, fetchUsers, pagination } = useAppStore();
   const { user: currentUser } = useAuthStore();
   const [query, setQuery] = useState('');
 
   useEffect(() => { 
-    fetchUsers(); 
-  }, [fetchUsers]);
+    if (users.length === 0) fetchUsers(1); 
+  }, []);
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 100 && pagination.users.hasMore && !pagination.users.isLoading) {
+      fetchUsers(pagination.users.page + 1);
+    }
+  };
 
   const batchYear = currentUser?.batchId?.match(/\d{4}/)?.[0] || new Date().getFullYear();
   
@@ -20,7 +27,11 @@ const YearbookTab = ({ onUserClick }) => {
   );
 
   return (
-    <div className="fade-in" style={{ padding: '24px 16px', background: 'var(--bg-dark)', minHeight: '100vh' }}>
+    <div 
+      className="fade-in hide-scrollbar" 
+      onScroll={handleScroll}
+      style={{ padding: '24px 16px', background: 'var(--bg-dark)', height: 'calc(100vh - 80px)', overflowY: 'auto' }}
+    >
       <header style={{ textAlign: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '2.5rem', fontFamily: 'serif', letterSpacing: '2px', color: 'var(--text-primary)', marginBottom: '8px' }}>CLASS OF {batchYear}</h1>
         <div style={{ width: '60px', height: '2px', background: 'var(--primary-blue)', margin: '0 auto' }} />
@@ -38,7 +49,7 @@ const YearbookTab = ({ onUserClick }) => {
 
       {filtered.length === 0 && (
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '48px' }}>
-          {users.length === 0 ? 'جاري التحميل...' : 'لا يوجد نتائج'}
+          {pagination.users.isLoading ? 'جاري التحميل...' : 'لا يوجد نتائج'}
         </p>
       )}
 
