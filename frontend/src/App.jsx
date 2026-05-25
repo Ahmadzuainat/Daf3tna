@@ -1,6 +1,7 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
+import { Analytics } from '@vercel/analytics/react';
 
 // Lazy Loaded Pages
 const AuthPage = lazy(() => import('./pages/AuthPage'));
@@ -104,6 +105,7 @@ function App() {
     <Router>
       <GlobalAlertBanner />
       <Toaster richColors position="top-right" closeButton />
+      <Analytics />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={isLoggedIn ? <Navigate to="/home" replace /> : <AuthPage />} />
